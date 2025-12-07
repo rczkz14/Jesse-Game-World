@@ -388,6 +388,15 @@ export function startGame() {
     assets.rocks[2].src = './assets/jesse-jump/bigrock.png';
     assets.rugby.src = './assets/jesse-jump/powerup.png';
 
+    // Background Music
+    const bgMusic = new Audio('./assets/jesse-jump/JesseJumpMusic.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.4;
+
+    // SFX
+    const sfxRockBreak = new Audio('./assets/jesse-jump/RockBreak.wav');
+    const sfxRockDestroy = new Audio('./assets/jesse-jump/RockDestroy.mp3');
+
     // Game Constants - Smaller tiles for zoomed out view
     const TILE_WIDTH = 50;  // Reduced from 80 for wider view
     const TILE_HEIGHT = 37; // Reduced from 60 for wider view
@@ -432,6 +441,10 @@ export function startGame() {
 
     // Initialize Game
     async function initGame() {
+        // Reset and Play Music
+        bgMusic.currentTime = 0;
+        bgMusic.play().catch(e => console.log('Music autoplay blocked:', e));
+
         state.score = 0;
         state.gameOver = false;
         state.running = false;
@@ -1329,7 +1342,9 @@ export function startGame() {
             if (state.powerUpActive) {
                 // Destroy rock immediately
                 landedBlock.hasRock = false;
-                // Play destroy sound (optional)
+                // Play destroy sound
+                sfxRockDestroy.currentTime = 0;
+                sfxRockDestroy.play().catch(() => { });
             } else {
                 // Damage rock
                 landedBlock.rockHP--;
@@ -1350,7 +1365,12 @@ export function startGame() {
                 // If broken
                 if (landedBlock.rockHP <= 0) {
                     landedBlock.hasRock = false;
-                    // Maybe play sound
+                    sfxRockDestroy.currentTime = 0;
+                    sfxRockDestroy.play().catch(() => { });
+                } else {
+                    // Just hit/damaged
+                    sfxRockBreak.currentTime = 0;
+                    sfxRockBreak.play().catch(() => { });
                 }
 
                 // Return early so we don't process item collection or score on the rock tile
@@ -1465,6 +1485,9 @@ export function startGame() {
     }
 
     async function gameOver() {
+        // Pause Music
+        bgMusic.pause();
+
         document.getElementById('game-over-modal').style.display = 'flex';
         document.getElementById('final-score').innerText = state.score;
 
@@ -1595,6 +1618,9 @@ export function startGame() {
     }
 
     function reviveGame() {
+        // Resume Music
+        bgMusic.play().catch(e => console.log('Music resume blocked:', e));
+
         document.getElementById('game-over-modal').style.display = 'none';
         state.gameOver = false;
         state.running = true;
