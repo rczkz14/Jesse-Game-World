@@ -396,6 +396,12 @@ export function startGame() {
     // SFX
     const sfxRockBreak = new Audio('./assets/jesse-jump/RockBreak.wav');
     const sfxRockDestroy = new Audio('./assets/jesse-jump/RockDestroy.mp3');
+    const sfxJump = new Audio('./assets/jesse-jump/Jump.mp3');
+
+    // Ensure Max Volume
+    sfxRockBreak.volume = 1.0;
+    sfxRockDestroy.volume = 1.0;
+    sfxJump.volume = 0.6; // slightly lower for frequent jumps so it doesn't annoy
 
     // Game Constants - Smaller tiles for zoomed out view
     const TILE_WIDTH = 50;  // Reduced from 80 for wider view
@@ -862,32 +868,11 @@ export function startGame() {
         }
     }
 
-    // Audio Context
-    let audioCtx;
+    // Audio
     function playJumpSound() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume().catch(e => console.error(e));
-        }
-
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        // Simple "Jump" beep (slide up)
-        oscillator.type = 'square';
-        oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
-
-        gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.1);
+        const clone = sfxJump.cloneNode();
+        clone.volume = 0.6;
+        clone.play().catch(() => { });
     }
 
     const btnLeft = document.getElementById('btn-left');
@@ -975,14 +960,14 @@ export function startGame() {
                     // Pause doom
                 } else {
                     // Calculate Base Speed based on Score tiers
-                    let secondsPerBlock = 0.25; // 0-199m
+                    let secondsPerBlock = 0.30; // 0-199m
 
                     if (state.hasRevived) {
-                        secondsPerBlock = 0.19; // Revive speed
-                    } else if (state.score >= 500) secondsPerBlock = 0.175; // 500m+ Normal speed
+                        secondsPerBlock = 0.18; // Revive speed
+                    } else if (state.score >= 500) secondsPerBlock = 0.175; // 500m+ Fastest
                     else if (state.score >= 400) secondsPerBlock = 0.18;
                     else if (state.score >= 300) secondsPerBlock = 0.225;
-                    else if (state.score >= 200) secondsPerBlock = 0.20;
+                    else if (state.score >= 200) secondsPerBlock = 0.25;
 
                     // Revive Protection: Pause doom until player passes the revive point
                     if (state.hasRevived && state.reviveGridDist) {
@@ -1343,8 +1328,9 @@ export function startGame() {
                 // Destroy rock immediately
                 landedBlock.hasRock = false;
                 // Play destroy sound
-                sfxRockDestroy.currentTime = 0;
-                sfxRockDestroy.play().catch(() => { });
+                const clone = sfxRockDestroy.cloneNode();
+                clone.volume = 1.0;
+                clone.play().catch(() => { });
             } else {
                 // Damage rock
                 landedBlock.rockHP--;
@@ -1365,12 +1351,14 @@ export function startGame() {
                 // If broken
                 if (landedBlock.rockHP <= 0) {
                     landedBlock.hasRock = false;
-                    sfxRockDestroy.currentTime = 0;
-                    sfxRockDestroy.play().catch(() => { });
+                    const clone = sfxRockDestroy.cloneNode();
+                    clone.volume = 1.0;
+                    clone.play().catch(() => { });
                 } else {
                     // Just hit/damaged
-                    sfxRockBreak.currentTime = 0;
-                    sfxRockBreak.play().catch(() => { });
+                    const clone = sfxRockBreak.cloneNode();
+                    clone.volume = 1.0;
+                    clone.play().catch(() => { });
                 }
 
                 // Return early so we don't process item collection or score on the rock tile
