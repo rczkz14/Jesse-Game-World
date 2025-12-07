@@ -22,7 +22,7 @@ async function fetchFarcasterProfile() {
       const user = context.user;
       profile = {
         picture: user.pfpUrl || './assets/farcaster.png',
-        nickname: user.displayName || user.username || 'Farcaster User',
+        nickname: user.displayName || user.username || 'Guest Player',
         fid: user.fid || 'Unknown',
       };
       console.log('Farcaster profile loaded:', profile);
