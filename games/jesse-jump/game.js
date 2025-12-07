@@ -1726,7 +1726,46 @@ export function startGame() {
         };
 
         try {
-            // Updated for Frame SDK v2
+            // Attempt Gasless Transaction (EIP-5792) via Coinbase Paymaster first
+            try {
+                // Construct the calls array (supports batching, but here just one)
+                const calls = [{
+                    to: JESSE_TOKEN_ADDRESS,
+                    data: data,
+                    value: "0x0"
+                }];
+
+                const result = await window.sdk.wallet.ethProvider.request({
+                    method: 'wallet_sendCalls',
+                    params: [{
+                        version: '1.0',
+                        chainId: '0x2105', // Base Mainnet 8453 in hex
+                        from: fromAddress,
+                        calls: calls,
+                        capabilities: {
+                            paymasterService: {
+                                url: 'https://api.developer.coinbase.com/rpc/v1/base/dmNxGQT1ETXNeortyCwc2OwVREEQok06'
+                            }
+                        }
+                    }]
+                });
+                console.log('Gasless Revive Sent!', result);
+                // Note: result is a transaction identifier, not receipt.
+                // For immediate UX responsiveness we assume success or wait briefly for 'wallet_getCallsStatus' if critical.
+                // Given "Revive" flow, immediate resume is preferred.
+                state.hasRevived = true;
+                reviveGame();
+
+                btn.style.opacity = '1';
+                costLabel.innerText = originalText;
+                return; // Exit success
+
+            } catch (gaslessError) {
+                console.warn('Gasless transaction failed or not supported, falling back to standard tx:', gaslessError);
+                // Fallthrough to standard logic below
+            }
+
+            // Fallback: Standard Transaction (User Pays Gas)
             const result = await window.sdk.wallet.ethProvider.request({
                 method: 'eth_sendTransaction',
                 params: [tx]
