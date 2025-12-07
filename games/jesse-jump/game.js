@@ -385,7 +385,8 @@ export function startGame() {
     assets.rocks[0].src = './assets/jesse-jump/smallrock.png';
     assets.rocks[1].src = './assets/jesse-jump/mediumrock.png';
     assets.rocks[2].src = './assets/jesse-jump/bigrock.png';
-    assets.rugby.src = './assets/jesse-jump/rugby.png';
+    assets.rocks[2].src = './assets/jesse-jump/bigrock.png';
+    assets.rugby.src = './assets/jesse-jump/powerup.png';
 
     // Game Constants - Smaller tiles for zoomed out view
     const TILE_WIDTH = 50;  // Reduced from 80 for wider view
@@ -636,10 +637,9 @@ export function startGame() {
                     // Just add one block (x+1 or y+1)
                     // We can alternate or random to keep it looking like a path
                     // Helper to check if rugby can spawn
-                    const trySpawnRugby = (dist) => {
-                        // Check global limits first (based on player score, or maybe distance?)
-                        // The user instructions imply a specific flow, but let's stick to the spacing rule primarily.
-
+                    // Helper to check if powerup can spawn
+                    const trySpawnPowerUp = (dist) => {
+                        // Check global limits first
                         let canSpawn = false;
                         if (state.score >= 301 && state.score < 600 && state.rugbyCount < 2) canSpawn = true;
                         else if (state.score >= 601 && state.score < 750 && state.rugbyCount < 5) canSpawn = true;
@@ -651,7 +651,7 @@ export function startGame() {
                             if (Math.abs(dist - pos) < 60) return false;
                         }
 
-                        // 10% chance if conditions met (matches random used before)
+                        // 10% chance if conditions met
                         return Math.random() < 0.1;
                     };
 
@@ -660,7 +660,8 @@ export function startGame() {
                     const nextY = head.y + (dir === 'left' ? 1 : 0);
                     const nextDist = nextX + nextY;
 
-                    let hasRugby = trySpawnRugby(nextDist);
+                    // Powerup logic restored
+                    let hasRugby = trySpawnPowerUp(nextDist);
                     if (hasRugby) {
                         state.rugbyPositions.push(nextDist);
                         state.rugbyCount++;
@@ -782,35 +783,35 @@ export function startGame() {
                     type: 'path'
                 };
 
-                // Controlled Rugby Ball Spawning
+                // PowerUp (formerly Rugby) Spawning Logic Restored
                 const currentDistance = nextBlock.x + nextBlock.y;
-                let canSpawnRugby = false;
+                let canSpawnPowerUp = false;
 
                 if (state.score >= 301 && state.score < 600) {
-                    // 301-600m: Max 2 rugby.png
+                    // 301-600m: Max 2 powerups
                     if (state.rugbyCount < 2) {
-                        canSpawnRugby = true;
+                        canSpawnPowerUp = true;
                     }
                 } else if (state.score >= 601 && state.score < 750) {
-                    // 601-750m: Max 3 more rugby.png (5 total)
+                    // 601-750m: Max 3 more powerups (5 total)
                     if (state.rugbyCount < 5) {
-                        canSpawnRugby = true;
+                        canSpawnPowerUp = true;
                     }
                 }
 
-                // Check minimum spacing (60m between rugby balls)
-                if (canSpawnRugby) {
+                // Check minimum spacing (60m between powerups)
+                if (canSpawnPowerUp) {
                     let tooClose = false;
-                    for (let rugbyPos of state.rugbyPositions) {
-                        if (Math.abs(currentDistance - rugbyPos) < 60) {
+                    for (let pos of state.rugbyPositions) {
+                        if (Math.abs(currentDistance - pos) < 60) {
                             tooClose = true;
                             break;
                         }
                     }
 
-                    // Random chance to place rugby (1% when conditions are met)
+                    // Random chance to place powerup (1% when conditions are met)
                     if (!tooClose && Math.random() < 0.01) {
-                        nextBlock.hasRugby = true;
+                        nextBlock.hasRugby = true; // reusing existing property
                         state.rugbyPositions.push(currentDistance);
                         state.rugbyCount++;
                     }
@@ -964,10 +965,10 @@ export function startGame() {
                     let secondsPerBlock = 0.25; // 0-199m
 
                     if (state.hasRevived) {
-                        secondsPerBlock = 0.18;
-                    } else if (state.score >= 500) secondsPerBlock = 0.16;
-                    else if (state.score >= 400) secondsPerBlock = 0.175;
-                    else if (state.score >= 300) secondsPerBlock = 0.225; // Slower at 300m as requested
+                        secondsPerBlock = 0.19; // Revive speed
+                    } else if (state.score >= 500) secondsPerBlock = 0.175; // 500m+ Normal speed
+                    else if (state.score >= 400) secondsPerBlock = 0.18;
+                    else if (state.score >= 300) secondsPerBlock = 0.225;
                     else if (state.score >= 200) secondsPerBlock = 0.20;
 
                     // Revive Protection: Pause doom until player passes the revive point
