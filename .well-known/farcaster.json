@@ -16,6 +16,6 @@
         "webhookUrl": "https://jesse-game-world.vercel.app/api/webhook"
     },
     "baseBuilder": {
-        "ownerAddress": "0x858d434E61f0117C8A761F89b372c4c4C479B10A"
+        "ownerAddress": "0x858d434E61f0117C8A761F895372c4c4C479810A"
     }
 }
