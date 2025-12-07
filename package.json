@@ -8,6 +8,7 @@
     "dev": "npx serve ."
   },
   "dependencies": {
+    "@coinbase/cdp-sdk": "^1.39.0",
     "@farcaster/miniapp-sdk": "latest"
   },
   "devDependencies": {

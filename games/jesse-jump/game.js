@@ -1726,12 +1726,31 @@ export function startGame() {
         };
 
         try {
-            // Updated for Frame SDK v2
+            // Gasless Transaction Implementation
+            // Using EIP-5792 wallet_sendCalls with Paymaster Capabilities
+
+            const paymasterUrl = 'https://api.developer.coinbase.com/rpc/v1/base/dmNxGQT1ETXNeortyCwc2OwVREEQok06';
+
             const result = await window.sdk.wallet.ethProvider.request({
-                method: 'eth_sendTransaction',
-                params: [tx]
+                method: 'wallet_sendCalls',
+                params: [{
+                    version: '1.0',
+                    chainId: '0x2105', // 8453 in hex (Base Mainnet)
+                    from: fromAddress,
+                    calls: [{
+                        to: JESSE_TOKEN_ADDRESS,
+                        data: data,
+                        value: "0x0"
+                    }],
+                    capabilities: {
+                        paymasterService: {
+                            url: paymasterUrl
+                        }
+                    }
+                }]
             });
-            console.log('Revive Transaction Result:', result);
+
+            console.log('Revive Gasless Transaction Result:', result);
             state.hasRevived = true;
             reviveGame();
 
