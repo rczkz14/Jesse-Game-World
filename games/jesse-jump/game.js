@@ -1514,7 +1514,7 @@ export function startGame() {
         const tweetText = `I jumped ${state.score}m in Jesse Jump !\nCan you beat me on #JesseGameWorld ?\nTry now : jesse-game-world.vercel.app`;
 
         const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(url)}`;
-        const tweetUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`;
+        const tweetUrl = `https://twitter.com/share?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`;
 
         // Set fallback hrefs
         const shareCastBtn = document.getElementById('share-cast');
