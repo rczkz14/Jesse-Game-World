@@ -118,12 +118,12 @@ function renderMainPage(jessePrice) {
           <div style="font-size:1.3em;font-weight:bold;margin-bottom:4px;">${profile.nickname}</div>
           <div style="background:#f5f5f5;padding:4px 14px;border-radius:8px;font-size:0.95em;margin-bottom:16px;">FID: ${profile.fid || 'Unknown'}</div>
         </div>
-        <div style="background:#f5faff;padding:12px 18px;border-radius:12px;margin:0 24px 18px 24px;font-size:0.98em;color:#2a5bd7;font-weight:bold;">CONNECTED WALLET<br><span style="color:#888;font-weight:normal;">Not Connected</span></div>
+        <div style="background:#f5faff;padding:12px 18px;border-radius:12px;margin:0 24px 18px 24px;font-size:0.98em;color:#2a5bd7;font-weight:bold;">CONNECTED WALLET<br><span id="wallet-address-display" style="color:#888;font-weight:normal;">Not Connected</span></div>
         <div style="padding:0 24px;">
           <div style="font-weight:bold;color:#888;font-size:0.98em;margin-bottom:10px;">GAME STATS</div>
           <div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px #0001;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;margin-bottom:10px;">
             <div style="display:flex;align-items:center;"><img src="./assets/jesse-jump/jessejump.png" style="width:32px;height:32px;margin-right:10px;" /><span style="font-weight:bold;">Jesse Jump</span></div>
-            <div style="font-size:1em;color:#222;font-weight:bold;">Best Score <span style="font-size:1.1em;">0m</span></div>
+            <div style="font-size:1em;color:#222;font-weight:bold;">Best Score <span id="best-score-display" style="font-size:1.1em;">0m</span></div>
           </div>
           <div style="background:#f5f5f5;border-radius:12px;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;margin-bottom:10px;opacity:0.7;">
             <div style="display:flex;align-items:center;"><img src="./assets/virus-jesse/virusjesse.png" style="width:32px;height:32px;margin-right:10px;filter:grayscale(1);" /><span style="font-weight:bold;color:#888;">Virus Jesse</span></div>
@@ -189,7 +189,54 @@ function renderMainPage(jessePrice) {
     const profileModal = document.getElementById('profile-modal');
     const closeProfile = document.getElementById('close-profile');
     if (profileBtn && profileModal && closeProfile) {
-      profileBtn.onclick = () => { profileModal.style.display = 'block'; };
+      profileBtn.onclick = async () => {
+        profileModal.style.display = 'block';
+
+        const walletDisplay = document.getElementById('wallet-address-display');
+        const scoreDisplay = document.getElementById('best-score-display');
+
+        // 1. Fetch Wallet Address
+        if (walletDisplay) {
+          walletDisplay.innerText = 'Connecting...';
+          try {
+            const result = await sdk.wallet.ethProvider.request({ method: 'eth_requestAccounts' });
+            if (result && result.length > 0) {
+              const addr = result[0];
+              walletDisplay.innerText = addr.slice(0, 6) + '...' + addr.slice(-4);
+              // Add Copy ability? Maybe later
+            } else {
+              walletDisplay.innerText = 'Not Connected';
+            }
+          } catch (e) {
+            console.warn('Wallet fetch failed', e);
+            walletDisplay.innerText = 'Not Connected';
+          }
+        }
+
+        // 2. Fetch Best Score
+        if (scoreDisplay) {
+          scoreDisplay.innerText = '...';
+          // We use nickname matching because that is how we saved it. Optimally should use FID.
+          // game.js saves player_name.
+          if (profile.nickname && profile.nickname !== 'Guest') {
+            const { data, error } = await supabase
+              .from('game_scores')
+              .select('score')
+              .eq('game_name', 'jesse-jump')
+              .eq('player_name', profile.nickname)
+              .order('score', { ascending: false })
+              .limit(1);
+
+            if (data && data.length > 0) {
+              scoreDisplay.innerText = data[0].score + 'm';
+            } else {
+              scoreDisplay.innerText = '0m';
+            }
+          } else {
+            scoreDisplay.innerText = '0m';
+          }
+        }
+      };
       closeProfile.onclick = () => { profileModal.style.display = 'none'; };
     }
 
