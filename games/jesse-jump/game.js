@@ -1530,25 +1530,19 @@ export function startGame() {
         const isWarpcast = navigator.userAgent.match(/Warpcast/i);
 
         shareCastBtn.onclick = (e) => {
-            e.preventDefault();
             if (isWarpcast && window.sdk && window.sdk.actions) {
+                e.preventDefault();
                 window.sdk.actions.openUrl(castUrl);
-            } else {
-                window.open(castUrl, '_blank');
             }
+            // Else: Allow default link behavior (opens in new tab/app)
         };
 
         shareTweetBtn.onclick = (e) => {
-            e.preventDefault();
-            // For Twitter, window.open is usually better everywhere to trigger the specific app
-            // But if Warpcast handles twitter intent links via openUrl nicely, we can use that.
-            // Let's stick to window.open for Twitter uniformly unless user complains.
-            // Actually, let's keep the split logic consistent if we want 'native feel' inside Farcaster.
             if (isWarpcast && window.sdk && window.sdk.actions) {
+                e.preventDefault();
                 window.sdk.actions.openUrl(tweetUrl);
-            } else {
-                window.open(tweetUrl, '_blank');
             }
+            // Else: Allow default link behavior (opens in new tab/app)
         };
 
         // Storage Case 2: If user has revived, subsequent death automatically stores
