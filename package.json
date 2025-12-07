@@ -9,5 +9,8 @@
   },
   "dependencies": {
     "@farcaster/miniapp-sdk": "latest"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
   }
 }

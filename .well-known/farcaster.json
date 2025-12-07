@@ -1,0 +1,18 @@
+{
+    "accountAssociation": {
+        "header": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJqZXNzZS1nYW1lLXdvcmxkLnZlcmNlbC5hcHAifQ.CorrectSignatureWillBeGeneratedByVercelOrTool",
+        "payload": "eyJkb21haW4iOiJqZXNzZS1nYW1lLXdvcmxkLnZlcmNlbC5hcHAifQ",
+        "signature": "ABNVfzk54I1TAI4slHPT3LYgzk+q32U6vsUs8t+t+gNc7wHr4vb9wz5uH4Z1YkDtmSuCAMhD3zG6o2jBHJxhfRw="
+    },
+    "frame": {
+        "version": "1",
+        "name": "Jesse Game World",
+        "iconUrl": "https://jesse-game-world.vercel.app/assets/icon.png",
+        "homeUrl": "https://jesse-game-world.vercel.app",
+        "imageUrl": "https://jesse-game-world.vercel.app/assets/jesseembem.png",
+        "buttonTitle": "Play with Jesse",
+        "splashImageUrl": "https://jesse-game-world.vercel.app/assets/jesseembem.png",
+        "splashBackgroundColor": "#000000",
+        "webhookUrl": "https://jesse-game-world.vercel.app/api/webhook"
+    }
+}
