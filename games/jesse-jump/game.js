@@ -394,14 +394,12 @@ export function startGame() {
     bgMusic.volume = 0.4;
 
     // SFX
-    const sfxRockBreak = new Audio('./assets/jesse-jump/RockBreak.wav');
+    const sfxRockBreak = new Audio('./assets/jesse-jump/RockBreak.mp3');
     const sfxRockDestroy = new Audio('./assets/jesse-jump/RockDestroy.mp3');
-    const sfxJump = new Audio('./assets/jesse-jump/Jump.mp3');
 
     // Ensure Max Volume
     sfxRockBreak.volume = 1.0;
     sfxRockDestroy.volume = 1.0;
-    sfxJump.volume = 0.6; // slightly lower for frequent jumps so it doesn't annoy
 
     // Game Constants - Smaller tiles for zoomed out view
     const TILE_WIDTH = 50;  // Reduced from 80 for wider view
@@ -868,11 +866,31 @@ export function startGame() {
         }
     }
 
-    // Audio
+    // Audio Optimization: Use a pool to avoid garbage collection lag from cloneNode
+    const jumpPool = [];
+    const POOL_SIZE = 5;
+    for (let i = 0; i < POOL_SIZE; i++) {
+        const a = new Audio('./assets/jesse-jump/Jump.mp3');
+        a.volume = 0.6;
+        jumpPool.push(a);
+    }
+    let poolIndex = 0;
+
     function playJumpSound() {
-        const clone = sfxJump.cloneNode();
-        clone.volume = 0.6;
-        clone.play().catch(() => { });
+        const audio = jumpPool[poolIndex];
+        poolIndex = (poolIndex + 1) % POOL_SIZE;
+
+        // Crop: play from 0.02s to 0.04s approx
+        // Note: HTML5 Audio timing precision varies. 
+        audio.currentTime = 0.02; // Start at 20ms
+        audio.play().catch(() => { });
+
+        // Stop after short duration to simulate "cutting" the tail
+        // 40ms end point - 20ms start = 20ms duration.
+        // We set timeout slightly larger to ensure the attack is heard.
+        setTimeout(() => {
+            audio.pause();
+        }, 50);
     }
 
     const btnLeft = document.getElementById('btn-left');
