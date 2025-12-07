@@ -27,7 +27,7 @@ async function fetchFarcasterProfile() {
       };
       console.log('Farcaster profile loaded:', profile);
     } else {
-        console.log('No Farcaster context/user found');
+      console.log('No Farcaster context/user found');
     }
   } catch (e) {
     console.warn('Farcaster profile fetch failed:', e);
@@ -264,37 +264,120 @@ function renderMainPage(jessePrice) {
   });
 }
 
+// Check if we are in a supported environment (Farcaster/BaseApp)
+// We utilize UA check + context race to be robust
+async function checkEnvironment() {
+  // 1. Trust User Agent if it explicitly says Warpcast/Farcaster
+  if (/Warpcast|Farcaster/i.test(navigator.userAgent)) {
+    return true;
+  }
+
+  // 2. Fallback: Check if sdk.context resolves within a timeout
+  // Increased timeout to 3500ms to verify slower connections/clients
+  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 3500));
+  try {
+    const context = await Promise.race([sdk.context, timeout]);
+    return !!context;
+  } catch (e) {
+    return false;
+  }
+}
+
+function renderGateScreen() {
+  const deepLink = 'https://warpcast.com/~/frames/launch?domain=jesse-game-world.vercel.app';
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(deepLink)}`;
+
+  app.innerHTML = `
+    <style>
+      body, html { margin:0; padding:0; height:100%; background: #f0f2f5; color: #333; font-family: 'Inter', sans-serif; }
+      .gate-container { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding:20px; text-align:center; background: radial-gradient(circle at center, #ffffff 0%, #f0f2f5 100%); }
+      .logo { width:120px; height:auto; margin-bottom:20px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); }
+      .title { font-size:1.6em; font-weight:800; margin-bottom:30px; color: #1a1a1a; letter-spacing: -0.5px; }
+      .qr-block { background: white; padding: 16px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); }
+      .qr-code { width:200px; height:200px; display: block; border-radius: 8px; }
+      .action-btn { background: linear-gradient(135deg, #E94F9B, #D63384); color:white; border:none; padding:16px 32px; font-size:1.1em; font-weight:bold; border-radius:30px; text-decoration:none; display:inline-block; box-shadow:0 8px 20px rgba(233,79,155,0.35); transition: transform 0.2s, box-shadow 0.2s; }
+      .action-btn:active { transform: scale(0.98); box-shadow:0 4px 10px rgba(233,79,155,0.2); }
+      .note { margin-top: 24px; font-size: 0.9em; color: #666; font-weight: 500; }
+    </style>
+    <div class="gate-container">
+      <img src="./assets/jgw.png" alt="JGW" class="logo" />
+      <div class="title">Play Jesse Game World<br>on Farcaster</div>
+      
+      <div class="qr-block">
+        <img src="${qrCodeUrl}" alt="Scan to Play" class="qr-code" />
+      </div>
+      
+      <a href="${deepLink}" class="action-btn">Open MiniApp</a>
+
+      <div class="note">Scan Code or Click Button</div>
+    </div>
+  `;
+  document.body.style.background = '#f0f2f5';
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   window.sdk = sdk;
-  await fetchFarcasterProfile();
-  fetchJessePrice().then(price => {
-    renderMainPage(price);
-    sdk.actions.ready();
-  });
 
-  // Populate recent players ticker
-  getRecentPlayers().then(originalPlayers => {
-    const ticker = document.getElementById('ticker-content');
-    if (ticker && originalPlayers.length > 0) {
-      // Normalize to exactly 6 items for consistent speed (30s loop)
-      let players = [...originalPlayers];
-      while (players.length < 6) {
-        players = players.concat(originalPlayers);
-      }
-      // Trim to exactly 6 if we exceeded (e.g. 4 -> 8 -> take 6) 
-      // casting the net wide ensures we have enough data to fill the 30s slot visual
-      players = players.slice(0, 6);
+  // 1. Immediate Environment Check
+  const isFarcasterEnv = await checkEnvironment();
 
-      const singleSet = players.map(p =>
-        `<div style="display:inline-flex;align-items:center;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);padding:6px 16px;border-radius:30px;margin-right:24px;box-shadow:0 2px 8px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.8);">
-          <img src="${p.icon}" style="width:28px;height:28px;margin-right:10px;border-radius:6px;object-fit:cover;" />
-          <img src="${p.profile.picture}" style="width:28px;height:28px;border-radius:50%;margin-right:10px;border:1px solid rgba(0,0,0,0.1);object-fit:cover;" />
-          <span style="font-weight:bold;color:#333;margin-right:8px;font-size:0.95em;">${p.profile.nickname}</span>
-          <span style="font-weight:900;color:#E94F9B;font-size:1em;">${p.score}m</span>
-        </div>`
-      ).join('');
-      // Repeat 4 times to ensure seamless loop buffer matching the CSS -25% transform
-      ticker.innerHTML = singleSet.repeat(4);
+  if (isFarcasterEnv) {
+    // 2. Render IMMEDIATELY with defaults to clear the splash screen (black screen)
+    // We don't wait for profile/price data here.
+    renderMainPage('Loading...');
+
+    // 3. Clear Splash Screen
+    try {
+      sdk.actions.ready();
+    } catch (e) {
+      console.error('Failed to call sdk.actions.ready:', e);
     }
-  });
+
+    // 4. Background Data Fetching
+    // We can update the UI once data arrives
+    (async () => {
+      try {
+        const [pricePromise, profilePromise] = [
+          fetchJessePrice(),
+          fetchFarcasterProfile()
+        ];
+
+        // Wait for both, but dont block the UI thread which is already rendered
+        const price = await pricePromise;
+        await profilePromise; // This updates the global 'profile' object
+
+        // Re-render with real data
+        console.log('Data loaded, re-rendering...');
+        renderMainPage(price || 'N/A');
+
+        // Re-attach listeners is handled by renderMainPage re-running
+
+        // Load Ticker logic
+        const originalPlayers = await getRecentPlayers();
+        const ticker = document.getElementById('ticker-content');
+        if (ticker && originalPlayers.length > 0) {
+          let players = [...originalPlayers];
+          while (players.length < 6) players = players.concat(originalPlayers);
+          players = players.slice(0, 6);
+
+          const singleSet = players.map(p =>
+            `<div style="display:inline-flex;align-items:center;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);padding:6px 16px;border-radius:30px;margin-right:24px;box-shadow:0 2px 8px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.8);">
+              <img src="${p.icon}" style="width:28px;height:28px;margin-right:10px;border-radius:6px;object-fit:cover;" />
+              <img src="${p.profile.picture}" style="width:28px;height:28px;border-radius:50%;margin-right:10px;border:1px solid rgba(0,0,0,0.1);object-fit:cover;" />
+              <span style="font-weight:bold;color:#333;margin-right:8px;font-size:0.95em;">${p.profile.nickname}</span>
+              <span style="font-weight:900;color:#E94F9B;font-size:1em;">${p.score}m</span>
+            </div>`
+          ).join('');
+          ticker.innerHTML = singleSet.repeat(4);
+        }
+
+      } catch (err) {
+        console.warn('Background data fetch error:', err);
+      }
+    })();
+
+  } else {
+    // Browser environment
+    renderGateScreen();
+  }
 });
