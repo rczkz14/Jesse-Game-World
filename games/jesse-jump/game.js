@@ -1468,23 +1468,15 @@ export function startGame() {
         const shareTweetBtn = document.getElementById('share-tweet');
         shareTweetBtn.href = tweetUrl;
 
-        // Use SDK openUrl to trigger native behaviors
+        // Use window.open to trigger native deep linking (App switching)
         shareCastBtn.onclick = (e) => {
             e.preventDefault();
-            if (window.sdk && window.sdk.actions) {
-                window.sdk.actions.openUrl(castUrl);
-            } else {
-                window.open(castUrl, '_blank');
-            }
+            window.open(castUrl, '_blank');
         };
 
         shareTweetBtn.onclick = (e) => {
             e.preventDefault();
-            if (window.sdk && window.sdk.actions) {
-                window.sdk.actions.openUrl(tweetUrl);
-            } else {
-                window.open(tweetUrl, '_blank');
-            }
+            window.open(tweetUrl, '_blank');
         };
 
         // Storage Case 2: If user has revived, subsequent death automatically stores
