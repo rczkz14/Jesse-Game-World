@@ -1452,10 +1452,10 @@ export function startGame() {
         document.getElementById('final-score').innerText = state.score;
 
         // Update Share Links
-        const url = 'https://jesse-game.vercel.app';
+        const url = 'https://jesse-game-world.vercel.app';
 
         const castText = `I jumped ${state.score}m in Jesse Jump !\nCan you beat me on #JesseGameWorld ?`;
-        const tweetText = `I jumped ${state.score}m in Jesse Jump !\nCan you beat me on #JesseGameWorld ?\nTry now : jesse-game.vercel.app`;
+        const tweetText = `I jumped ${state.score}m in Jesse Jump !\nCan you beat me on #JesseGameWorld ?\nTry now : jesse-game-world.vercel.app`;
 
         const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(url)}`;
         const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`;
