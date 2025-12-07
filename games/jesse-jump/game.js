@@ -1460,8 +1460,14 @@ export function startGame() {
         const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(url)}`;
         const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`;
 
-        // Use SDK openUrl to trigger native behaviors
+        // Set fallback hrefs
         const shareCastBtn = document.getElementById('share-cast');
+        shareCastBtn.href = castUrl;
+
+        const shareTweetBtn = document.getElementById('share-tweet');
+        shareTweetBtn.href = tweetUrl;
+
+        // Use SDK openUrl to trigger native behaviors
         shareCastBtn.onclick = (e) => {
             e.preventDefault();
             if (window.sdk && window.sdk.actions) {
@@ -1471,7 +1477,6 @@ export function startGame() {
             }
         };
 
-        const shareTweetBtn = document.getElementById('share-tweet');
         shareTweetBtn.onclick = (e) => {
             e.preventDefault();
             if (window.sdk && window.sdk.actions) {
@@ -1485,9 +1490,21 @@ export function startGame() {
         if (state.hasRevived) {
             saveScore(state.score);
             state.scoreSaved = true;
+
+            // Hide Revive button as only 1 revive per run is allowed
+            const reviveBtn = document.getElementById('revive-btn');
+            if (reviveBtn) reviveBtn.style.display = 'none';
+
         } else {
             // Case 1: Don't store yet
             state.scoreSaved = false;
+
+            // Ensure Revive button is visible for the first death
+            const reviveBtn = document.getElementById('revive-btn');
+            if (reviveBtn) {
+                reviveBtn.style.display = 'flex';
+                reviveBtn.style.opacity = '1';
+            }
         }
 
         // Fetch Revive Price
@@ -1512,12 +1529,23 @@ export function startGame() {
     }
 
     document.getElementById('restart-btn').onclick = async () => {
+        const btn = document.getElementById('restart-btn');
         // Case 1: Save on "Try Again"
         if (!state.scoreSaved) {
-            const btn = document.getElementById('restart-btn');
             btn.style.opacity = '0.5';
+            btn.innerText = 'Saving...';
             await saveScore(state.score);
         }
+        btn.style.opacity = '1'; // Reset opacity
+        btn.innerText = 'TRY AGAIN'; // Reset text
+
+        // Reset Revive button just in case
+        const reviveBtn = document.getElementById('revive-btn');
+        if (reviveBtn) {
+            reviveBtn.style.display = 'flex';
+            reviveBtn.style.opacity = '1';
+        }
+
         initGame();
     };
 
@@ -1619,7 +1647,11 @@ export function startGame() {
         };
 
         try {
-            const result = await window.sdk.actions.sendTransaction(tx);
+            // Updated for Frame SDK v2
+            const result = await window.sdk.wallet.ethProvider.request({
+                method: 'eth_sendTransaction',
+                params: [tx]
+            });
             console.log('Revive Transaction Result:', result);
             state.hasRevived = true;
             reviveGame();
