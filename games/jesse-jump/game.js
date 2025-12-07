@@ -1460,8 +1460,26 @@ export function startGame() {
         const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(url)}`;
         const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`;
 
-        document.getElementById('share-cast').href = castUrl;
-        document.getElementById('share-tweet').href = tweetUrl;
+        // Use SDK openUrl to trigger native behaviors
+        const shareCastBtn = document.getElementById('share-cast');
+        shareCastBtn.onclick = (e) => {
+            e.preventDefault();
+            if (window.sdk && window.sdk.actions) {
+                window.sdk.actions.openUrl(castUrl);
+            } else {
+                window.open(castUrl, '_blank');
+            }
+        };
+
+        const shareTweetBtn = document.getElementById('share-tweet');
+        shareTweetBtn.onclick = (e) => {
+            e.preventDefault();
+            if (window.sdk && window.sdk.actions) {
+                window.sdk.actions.openUrl(tweetUrl);
+            } else {
+                window.open(tweetUrl, '_blank');
+            }
+        };
 
         // Storage Case 2: If user has revived, subsequent death automatically stores
         if (state.hasRevived) {
