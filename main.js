@@ -284,7 +284,7 @@ async function checkEnvironment() {
 }
 
 function renderGateScreen() {
-  const deepLink = 'https://warpcast.com/~/frames/launch?domain=jesse-game-world.vercel.app';
+  const deepLink = 'https://warpcast.com/~/frames/launch?url=https%3A%2F%2Fjesse-game-world.vercel.app';
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(deepLink)}`;
 
   app.innerHTML = `
