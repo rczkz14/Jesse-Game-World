@@ -1534,15 +1534,29 @@ export function startGame() {
                 e.preventDefault();
                 window.sdk.actions.openUrl(castUrl);
             }
-            // Else: Allow default link behavior (opens in new tab/app)
         };
 
         shareTweetBtn.onclick = (e) => {
-            if (window.sdk && window.sdk.actions) {
-                e.preventDefault();
+            e.preventDefault();
+            if (isWarpcast && window.sdk && window.sdk.actions) {
+                // Warpcast handles https intents well via SDK
                 window.sdk.actions.openUrl(tweetUrl);
+            } else {
+                // Base App / Others: Try native scheme to force Twitter App and avoid internal browser "profile" bug
+                // Note: twitter:// scheme combines text and url in 'message' usually, or just 'text'
+                const nativeTweetText = tweetText + ' ' + url;
+                const nativeUrl = `twitter://post?message=${encodeURIComponent(nativeTweetText)}`;
+
+                // Use window.location.href for deep links to ensure it triggers the app switch
+                window.location.href = nativeUrl;
+
+                // Fallback (timeout) could be added to open web url, but web url triggers the profile bug. 
+                // We'll trust the user wants the App.
+                setTimeout(() => {
+                    // unexpected fallback if app switch fails quickly
+                    window.open(tweetUrl, '_blank');
+                }, 1500);
             }
-            // Else: Allow default link behavior (opens in new tab/app)
         };
 
         // Storage Case 2: If user has revived, subsequent death automatically stores

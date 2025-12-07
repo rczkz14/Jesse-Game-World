@@ -17,5 +17,12 @@
     },
     "baseBuilder": {
         "ownerAddress": "0x858d434E61f0117C8A761F895372c4c4C479810A"
-    }
+    },
+    "primaryCategory": "games",
+    "tags": [
+        "jesse",
+        "games",
+        "game",
+        "miniapp"
+    ]
 }
