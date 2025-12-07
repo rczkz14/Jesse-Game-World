@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Jesse Game World</title>
+  <meta name="fc:miniapp"
+    content='{"version": "next", "imageUrl": "https://jesse-game.vercel.app/assets/jgw.png", "button": {"title": "Play with Jesse", "action": {"type": "launch_frame", "name": "Jesse Game World", "url": "https://jesse-game.vercel.app", "splashImageUrl": "https://jesse-game.vercel.app/assets/jgw.png", "splashBackgroundColor": "#000000"}}}' />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://jesse-game.vercel.app/">
+  <meta property="og:title" content="Jesse Game World">
+  <meta property="og:description" content="Play Jesse Jump and other mini games on Farcaster!">
+  <meta property="og:image" content="https://jesse-game.vercel.app/assets/jesseembem.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://jesse-game.vercel.app/">
+  <meta property="twitter:title" content="Jesse Game World">
+  <meta property="twitter:description" content="Play Jesse Jump and other mini games on Farcaster!">
+  <meta property="twitter:image" content="https://jesse-game.vercel.app/assets/jesseembem.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      overscroll-behavior: none;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module" src="./main.js?v=2"></script>
+</body>
+
+</html>

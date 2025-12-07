@@ -1,0 +1,13 @@
+{
+  "name": "jesse-game-world",
+  "version": "1.0.0",
+  "description": "A Farcaster Miniapp with 3 games",
+  "main": "main.js",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve ."
+  },
+  "dependencies": {
+    "@farcaster/miniapp-sdk": "latest"
+  }
+}
