@@ -1640,7 +1640,18 @@ export function startGame() {
 
         const data = encodeTransfer(DEV_WALLET, amountWei);
 
+        let fromAddress;
+        try {
+            const accounts = await window.sdk.wallet.ethProvider.request({ method: 'eth_requestAccounts' });
+            fromAddress = accounts[0];
+        } catch (err) {
+            console.error('Failed to get user address:', err);
+            costLabel.innerText = 'Wallet Error';
+            return;
+        }
+
         const tx = {
+            from: fromAddress, // REQUIRED for many providers
             to: JESSE_TOKEN_ADDRESS,
             value: "0x0",
             data: data,
