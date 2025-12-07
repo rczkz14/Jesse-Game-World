@@ -472,10 +472,11 @@ export function startGame() {
 
         // Load Farcaster profile
         try {
-            const user = await window.sdk?.user?.getCurrentUser();
+            const context = await window.sdk?.context;
+            const user = context?.user;
             if (user) {
-                document.getElementById('profile-pic').src = user.pfp_url || './assets/farcaster.png';
-                document.getElementById('profile-name').innerText = user.display_name || user.username || 'Player';
+                document.getElementById('profile-pic').src = user.pfpUrl || './assets/farcaster.png';
+                document.getElementById('profile-name').innerText = user.displayName || user.username || 'Player';
             }
         } catch (e) {
             console.warn('Failed to load Farcaster profile:', e);

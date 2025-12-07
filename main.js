@@ -1,4 +1,4 @@
-import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
+import sdk from 'https://esm.sh/@farcaster/frame-sdk';
 import JesseJump from './games/jesse-jump/index.js';
 import { startGame as startJesseJump } from './games/jesse-jump/game.js';
 import VirusJesse from './games/virus-jesse/index.js';
@@ -10,20 +10,24 @@ const app = document.getElementById('app');
 // Farcaster profile (populated via SDK)
 let profile = {
   picture: './assets/farcaster.png',
-  nickname: 'nickname',
+  nickname: 'Guest',
 };
 
 // Try to fetch Farcaster user profile via SDK
 async function fetchFarcasterProfile() {
   try {
-    // Only works if opened in Farcaster/BaseApp
-    const user = await sdk.user.getCurrentUser();
-    if (user) {
+    // Wait for context from local client
+    const context = await sdk.context;
+    if (context && context.user) {
+      const user = context.user;
       profile = {
-        picture: user.pfp_url || './assets/farcaster.png',
-        nickname: user.display_name || user.username || 'Farcaster User',
+        picture: user.pfpUrl || './assets/farcaster.png',
+        nickname: user.displayName || user.username || 'Farcaster User',
         fid: user.fid || 'Unknown',
       };
+      console.log('Farcaster profile loaded:', profile);
+    } else {
+        console.log('No Farcaster context/user found');
     }
   } catch (e) {
     console.warn('Farcaster profile fetch failed:', e);
