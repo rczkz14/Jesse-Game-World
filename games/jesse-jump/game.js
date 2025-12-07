@@ -866,31 +866,41 @@ export function startGame() {
         }
     }
 
-    // Audio Optimization: Use a pool to avoid garbage collection lag from cloneNode
-    const jumpPool = [];
-    const POOL_SIZE = 5;
-    for (let i = 0; i < POOL_SIZE; i++) {
-        const a = new Audio('./assets/jesse-jump/Jump.mp3');
-        a.volume = 0.6;
-        jumpPool.push(a);
+    // Audio Optimization: Web Audio API (Best for frequent SFX)
+    let audioCtx = null;
+    let jumpBuffer = null;
+
+    // Load sound once
+    async function loadJumpSound() {
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const res = await fetch('./assets/jesse-jump/Jump.mp3');
+            const arrayBuffer = await res.arrayBuffer();
+            jumpBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        } catch (e) {
+            console.error('Failed to load jump sound via Web Audio API', e);
+        }
     }
-    let poolIndex = 0;
+    loadJumpSound(); // Start loading immediately
 
     function playJumpSound() {
-        const audio = jumpPool[poolIndex];
-        poolIndex = (poolIndex + 1) % POOL_SIZE;
+        if (!audioCtx || !jumpBuffer) return;
 
-        // Crop: play from 0.02s to 0.04s approx
-        // Note: HTML5 Audio timing precision varies. 
-        audio.currentTime = 0.02; // Start at 20ms
-        audio.play().catch(() => { });
+        // Resume if suspended (browser policy)
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
 
-        // Stop after short duration to simulate "cutting" the tail
-        // 40ms end point - 20ms start = 20ms duration.
-        // We set timeout slightly larger to ensure the attack is heard.
-        setTimeout(() => {
-            audio.pause();
-        }, 50);
+        const source = audioCtx.createBufferSource();
+        source.buffer = jumpBuffer;
+        source.connect(audioCtx.destination);
+
+        // Play precisely from 0.02s
+        // Duration: 0.02s start, plays for 0.05s duration
+        const offset = 0.02;
+        const duration = 0.05; // Play slightly longer slice to ensure audibility (20ms-70ms)
+
+        source.start(0, offset, duration);
     }
 
     const btnLeft = document.getElementById('btn-left');
