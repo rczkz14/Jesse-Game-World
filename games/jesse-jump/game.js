@@ -1534,7 +1534,7 @@ export function startGame() {
         const url = 'https://jesse-game-world.vercel.app';
 
         const castText = `I jumped ${state.score}m in Jesse Jump !\nCan you beat me on #JesseGameWorld ?`;
-        const tweetText = `I jumped ${state.score}m in Jesse Jump !\nCan you beat me on #JesseGameWorld ?\nTry now : jesse-game-world.vercel.app`;
+        const tweetText = `I jumped ${state.score}m in Jesse Jump !\nCan you beat me on #JesseGameWorld ?`;
 
         const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(url)}`;
         const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`;
