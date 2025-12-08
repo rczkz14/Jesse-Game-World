@@ -1477,10 +1477,7 @@ export function startGame() {
     }
 
     async function saveScore(finalScore) {
-        if (finalScore <= 0) {
-            console.log('Score is 0, skipping save.');
-            return null;
-        }
+        // Removed 0 check to ensure testing works
         console.log('Attempting to save score:', finalScore);
 
         let user = null;
@@ -1610,18 +1607,17 @@ export function startGame() {
         };
 
         // IMMEDIATE SAVE STRATEGY
-        // 1. If we already have an ID (from a previous death in this session), UPDATE it.
-        // 2. If no ID (first death), INSERT new row and save the ID.
+        // 1. If we already have an ID (from a previous death), UPDATE it.
+        // 2. If no ID, INSERT.
         if (state.lastScoreId) {
-            // we revived and died again
-            updateScore(state.lastScoreId, state.score);
+            // Update existing
+            await updateScore(state.lastScoreId, state.score);
         } else {
-            // First time dying
-            // We use .then to handle the async result without blocking the UI thread completely, 
-            // but for simplicity/robustness we just call it.
-            saveScore(state.score).then(id => {
-                if (id) state.lastScoreId = id;
-            });
+            // First save
+            const newId = await saveScore(state.score);
+            if (newId) {
+                state.lastScoreId = newId;
+            }
         }
 
         // Hide Revive button if already used
@@ -1637,7 +1633,7 @@ export function startGame() {
             }
         }
 
-        // Fetch Revive Price
+        // Fetch Revive Price logic follows...
         const costLabel = document.getElementById('revive-cost');
         if (costLabel) {
             costLabel.innerText = 'Loading...';
