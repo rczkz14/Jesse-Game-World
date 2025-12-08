@@ -487,6 +487,7 @@ export function startGame() {
         // Reset Score/Revive Logic
         state.hasRevived = false;
         state.scoreSaved = false;
+        state.lastScoreId = null; // Track the DB ID for updates
 
         // Load Farcaster profile
         try {
@@ -1513,13 +1514,31 @@ export function startGame() {
 
         console.log('Saving data payload:', playerData);
 
-        const { data, error } = await supabase.from('game_scores').insert(playerData);
+        const { data, error } = await supabase
+            .from('game_scores')
+            .insert(playerData)
+            .select(); // Ensure we get the return data back
 
         if (error) {
             console.error('Supabase Insert Error:', error);
-            // Don't alert blocking error, just log
+            return null;
         } else {
             console.log('Score saved successfully:', data);
+            return data && data[0] ? data[0].id : null;
+        }
+    }
+
+    async function updateScore(id, newScore) {
+        console.log('Updating score for ID:', id, 'New Score:', newScore);
+        const { data, error } = await supabase
+            .from('game_scores')
+            .update({ score: newScore })
+            .eq('id', id);
+
+        if (error) {
+            console.error('Supabase Update Error:', error);
+        } else {
+            console.log('Score updated successfully');
         }
     }
 
@@ -1582,19 +1601,26 @@ export function startGame() {
             }
         };
 
-        // Storage Case 2: If user has revived, subsequent death automatically stores
-        if (state.hasRevived) {
-            saveScore(state.score);
-            state.scoreSaved = true;
+        // IMMEDIATE SAVE STRATEGY
+        // 1. If we already have an ID (from a previous death in this session), UPDATE it.
+        // 2. If no ID (first death), INSERT new row and save the ID.
+        if (state.lastScoreId) {
+            // we revived and died again
+            updateScore(state.lastScoreId, state.score);
+        } else {
+            // First time dying
+            // We use .then to handle the async result without blocking the UI thread completely, 
+            // but for simplicity/robustness we just call it.
+            saveScore(state.score).then(id => {
+                if (id) state.lastScoreId = id;
+            });
+        }
 
-            // Hide Revive button as only 1 revive per run is allowed
+        // Hide Revive button if already used
+        if (state.hasRevived) {
             const reviveBtn = document.getElementById('revive-btn');
             if (reviveBtn) reviveBtn.style.display = 'none';
-
         } else {
-            // Case 1: Don't store yet
-            state.scoreSaved = false;
-
             // Ensure Revive button is visible for the first death
             const reviveBtn = document.getElementById('revive-btn');
             if (reviveBtn) {
@@ -1626,12 +1652,9 @@ export function startGame() {
 
     document.getElementById('restart-btn').onclick = async () => {
         const btn = document.getElementById('restart-btn');
-        // Case 1: Save on "Try Again"
-        if (!state.scoreSaved) {
-            btn.style.opacity = '0.5';
-            btn.innerText = 'Saving...';
-            await saveScore(state.score);
-        }
+        // No need to save here anymore, it was saved on death.
+
+        btn.style.opacity = '0.5';
         btn.style.opacity = '1'; // Reset opacity
         btn.innerText = 'TRY AGAIN'; // Reset text
 
@@ -1780,9 +1803,7 @@ export function startGame() {
     };
 
     document.getElementById('home-btn').onclick = async () => {
-        if (!state.scoreSaved) {
-            await saveScore(state.score);
-        }
+        // Already saved on death
         location.reload();
     };
 
