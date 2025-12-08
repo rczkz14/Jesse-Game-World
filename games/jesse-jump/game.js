@@ -991,11 +991,34 @@ export function startGame() {
                     let secondsPerBlock = 0.30; // 0-199m
 
                     if (state.hasRevived) {
-                        secondsPerBlock = 0.18; // Revive speed
-                    } else if (state.score >= 500) secondsPerBlock = 0.175; // 500m+ Fastest
-                    else if (state.score >= 400) secondsPerBlock = 0.18;
-                    else if (state.score >= 300) secondsPerBlock = 0.225;
-                    else if (state.score >= 200) secondsPerBlock = 0.25;
+                        secondsPerBlock = 0.225; // Revive speed
+                    } else if (state.score >= 400) {
+                        secondsPerBlock = 0.205; // Base for 400m+
+                    } else if (state.score >= 300) secondsPerBlock = 0.25;
+                    else if (state.score >= 200) secondsPerBlock = 0.275;
+
+                    // Obstacle Penalty Logic (400m+)
+                    if (state.score >= 400 && !state.hasRevived) {
+                        const currentHundred = Math.floor(state.score / 100);
+                        const getBlockScore = (b) => {
+                            const raw = b.x + b.y;
+                            const startOffset = 11;
+                            const cycleLength = 111;
+                            const dist = Math.max(0, raw - startOffset);
+                            const cages = Math.floor(dist / cycleLength);
+                            return dist - (cages * 11);
+                        };
+                        let obsCount = 0;
+                        for (const b of state.blocks) {
+                            if (b.hasRock) {
+                                const bScore = getBlockScore(b);
+                                if (Math.floor(bScore / 100) === currentHundred) {
+                                    obsCount++;
+                                }
+                            }
+                        }
+                        secondsPerBlock += (obsCount * 0.02);
+                    }
 
                     // Revive Protection: Pause doom until player passes the revive point
                     if (state.hasRevived && state.reviveGridDist) {

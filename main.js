@@ -265,7 +265,17 @@ function renderMainPage(jessePrice) {
           const leaderboardModalContainer = document.getElementById('jj-leaderboard-modal-container');
           if (leaderboardBtn && leaderboardModalContainer) {
             leaderboardBtn.onclick = async () => {
-              leaderboardModalContainer.innerHTML = '<div id="jj-leaderboard-modal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.28);display:flex;align-items:center;justify-content:center;"><div style="font-size:1.3em;font-weight:bold;margin-bottom:18px;text-align:center;">Leaderboard</div><div id="jj-leaderboard-content" style="min-height:120px;">Loading...</div></div>';
+              leaderboardModalContainer.innerHTML = `
+                <div id="jj-leaderboard-modal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
+                  <div style="background:#23293a;color:#fff;width:90%;max-width:360px;border-radius:16px;padding:20px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+                    <button id="close-jj-leaderboard" style="position:absolute;top:10px;right:10px;background:none;border:none;color:#fff;font-size:1.5em;cursor:pointer;padding:5px;">✕</button>
+                    <div style="font-size:1.4em;font-weight:bold;margin-bottom:20px;text-align:center;">🏆 Leaderboard</div>
+                    <div id="jj-leaderboard-content" style="max-height:50vh;overflow-y:auto;min-height:100px;">
+                      Loading...
+                    </div>
+                  </div>
+                </div>
+              `;
               setTimeout(async () => {
                 const closeLbBtn = document.getElementById('close-jj-leaderboard');
                 if (closeLbBtn) {
