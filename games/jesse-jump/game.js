@@ -1477,6 +1477,10 @@ export function startGame() {
     }
 
     async function saveScore(finalScore) {
+        if (finalScore <= 0) {
+            console.log('Score is 0, skipping save.');
+            return null;
+        }
         console.log('Attempting to save score:', finalScore);
 
         let user = null;
@@ -1533,12 +1537,16 @@ export function startGame() {
         const { data, error } = await supabase
             .from('game_scores')
             .update({ score: newScore })
-            .eq('id', id);
+            .eq('id', id)
+            .select();
 
-        if (error) {
-            console.error('Supabase Update Error:', error);
+        if (error || !data || data.length === 0) {
+            console.warn('Supabase Update Failed (RLS or ID missing). Falling back to INSERT.', error);
+            // Fallback: If update fails, just insert a new one so we don't lose data
+            const newId = await saveScore(newScore);
+            if (newId) state.lastScoreId = newId; // Update local ID to the new one
         } else {
-            console.log('Score updated successfully');
+            console.log('Score updated successfully:', data);
         }
     }
 
