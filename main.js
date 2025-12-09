@@ -87,7 +87,7 @@ function renderMainPage(jessePrice) {
       .profile img { width:40px; height:40px; border-radius:50%; margin-right:10px; }
       .center-img { display:flex; justify-content:center; margin:30px 0; }
       .center-img img { max-width:200px; }
-      .recent-ticker { width:100%; overflow:hidden; white-space:nowrap; margin-bottom:20px; background:rgba(255,255,255,0.7); border-radius:12px; box-shadow:0 2px 8px #0002; padding:8px 0; }
+      .recent-ticker { width:100%; overflow:hidden; white-space:nowrap; margin-bottom:20px; padding:8px 0; }
       .ticker-content { display:inline-flex; animation:fly 10s linear infinite; width: max-content; }
       @keyframes fly { 0% { transform:translateX(0); } 100% { transform:translateX(-25%); } }
       .game-boxes { display:flex; justify-content:center; gap:30px; margin-bottom:40px; }
@@ -266,12 +266,31 @@ function renderMainPage(jessePrice) {
           if (leaderboardBtn && leaderboardModalContainer) {
             leaderboardBtn.onclick = async () => {
               leaderboardModalContainer.innerHTML = `
-                <div id="jj-leaderboard-modal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
-                  <div style="background:#23293a;color:#fff;width:90%;max-width:360px;border-radius:16px;padding:20px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
-                    <button id="close-jj-leaderboard" style="position:absolute;top:10px;right:10px;background:none;border:none;color:#fff;font-size:1.5em;cursor:pointer;padding:5px;">✕</button>
-                    <div style="font-size:1.4em;font-weight:bold;margin-bottom:20px;text-align:center;">🏆 Leaderboard</div>
-                    <div id="jj-leaderboard-content" style="max-height:50vh;overflow-y:auto;min-height:100px;">
-                      Loading...
+                <style>
+                  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+                  .pixel-font { font-family: 'Press Start 2P', cursive; }
+                  .rank-1 { color: #FFD700; text-shadow: 2px 2px #000; } /* Gold */
+                  .rank-2 { color: #C0C0C0; text-shadow: 2px 2px #000; } /* Silver */
+                  .rank-3 { color: #CD7F32; text-shadow: 2px 2px #000; } /* Bronze */
+                  .rank-item {
+                    display: flex;
+                    align-items: center;
+                    background: rgba(0,0,0,0.3);
+                    margin-bottom: 12px;
+                    padding: 12px;
+                    border: 4px solid #fff;
+                    image-rendering: pixelated;
+                    box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+                    transition: transform 0.1s;
+                  }
+                  .rank-item:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px rgba(0,0,0,0.5); }
+                </style>
+                <div id="jj-leaderboard-modal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;">
+                  <div class="pixel-font" style="background:#2d3448;color:#fff;width:90%;max-width:380px;border: 4px solid #fff; padding:20px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,0.8);image-rendering:pixelated;">
+                    <button id="close-jj-leaderboard" style="position:absolute;top:-20px;right:-20px;background:#E94F9B;border:4px solid #fff;color:#fff;font-family:'Press Start 2P';font-size:12px;cursor:pointer;padding:12px;box-shadow:4px 4px 0 #000;">X</button>
+                    <div style="font-size:18px;margin-bottom:24px;text-align:center;text-shadow:3px 3px 0 #000;color:#55dbcb;">LEADERBOARD</div>
+                    <div id="jj-leaderboard-content" style="max-height:50vh;overflow-y:auto;min-height:150px;font-size:12px;padding-right:8px;">
+                      <div style="text-align:center;padding:20px;">LOADING...</div>
                     </div>
                   </div>
                 </div>
@@ -290,27 +309,48 @@ function renderMainPage(jessePrice) {
                     .select('player_name, player_avatar, score')
                     .eq('game_name', 'jesse-jump')
                     .order('score', { ascending: false })
-                    .limit(10);
+                    .limit(5);
+
                   const content = document.getElementById('jj-leaderboard-content');
+
                   if (error || !data) {
-                    content.innerHTML = '<div style="color:#E94F9B;">Failed to load leaderboard.</div>';
+                    content.innerHTML = '<div style="color:#E94F9B;text-align:center;">Failed to load.</div>';
                     return;
                   }
                   if (data.length === 0) {
-                    content.innerHTML = '<div>No scores yet.</div>';
+                    content.innerHTML = '<div style="text-align:center;">No scores yet.</div>';
                     return;
                   }
-                  content.innerHTML = '<ol style="padding-left:18px;">' +
-                    data.map(function (row, i) {
-                      return '<li style="margin-bottom:8px;display:flex;align-items:center;">' +
-                        '<img src="' + (row.player_avatar || './assets/farcaster.png') + '" style="width:28px;height:28px;border-radius:50%;margin-right:10px;vertical-align:middle;" /> ' +
-                        '<span style="font-weight:bold;">' + row.player_name + '</span> ' +
-                        '<span style="margin-left:auto;font-size:1.1em;color:#FFD600;font-weight:bold;">' + row.score + 'm</span>' +
-                        '</li>';
-                    }).join('') + '</ol>';
+
+                  content.innerHTML = data.map(function (row, i) {
+                    let rankStyle = '';
+                    let rankIcon = `<span style="width:24px;display:inline-block;text-align:center;margin-right:8px;">#${i + 1}</span>`;
+
+                    if (i === 0) {
+                      rankStyle = 'rank-1';
+                      rankIcon = `<span style="font-size:20px;width:24px;display:inline-block;margin-right:8px;">🏆</span>`;
+                    } else if (i === 1) {
+                      rankStyle = 'rank-2';
+                      rankIcon = `<span style="font-size:20px;width:24px;display:inline-block;margin-right:8px;">🥈</span>`;
+                    } else if (i === 2) {
+                      rankStyle = 'rank-3';
+                      rankIcon = `<span style="font-size:20px;width:24px;display:inline-block;margin-right:8px;">🥉</span>`;
+                    }
+
+                    return `
+                        <div class="rank-item ${rankStyle}">
+                          ${rankIcon}
+                          <img src="${row.player_avatar || './assets/farcaster.png'}" style="width:32px;height:32px;border:2px solid #fff;margin-right:12px;object-fit:cover;background:#000;">
+                          <div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px;">
+                            ${row.player_name}
+                          </div>
+                          <div style="color:#fff;text-shadow:2px 2px 0 #000;">${row.score}m</div>
+                        </div>
+                      `;
+                  }).join('');
                 } catch (e) {
                   const content = document.getElementById('jj-leaderboard-content');
-                  content.innerHTML = '<div style="color:#E94F9B;">Error loading leaderboard.</div>';
+                  if (content) content.innerHTML = '<div style="color:#E94F9B;text-align:center;">Error loading.</div>';
                 }
               }, 0);
             };
