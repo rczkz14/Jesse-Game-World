@@ -1619,18 +1619,19 @@ export function startGame() {
         };
 
         // IMMEDIATE SAVE STRATEGY
-        // 1. If we already have an ID (from a previous death), UPDATE it.
-        // 2. If no ID, INSERT.
-        if (state.lastScoreId) {
-            // Update existing
-            await updateScore(state.lastScoreId, state.score);
-        } else {
-            // First save
-            const newId = await saveScore(state.score);
-            if (newId) {
-                state.lastScoreId = newId;
+        // Wrap in a promise so we can await it on exit
+        state.activeSavePromise = (async () => {
+            if (state.lastScoreId) {
+                // Update existing
+                await updateScore(state.lastScoreId, state.score);
+            } else {
+                // First save
+                const newId = await saveScore(state.score);
+                if (newId) {
+                    state.lastScoreId = newId;
+                }
             }
-        }
+        })();
 
         // Hide Revive button if already used
         if (state.hasRevived) {
@@ -1819,7 +1820,21 @@ export function startGame() {
     };
 
     document.getElementById('home-btn').onclick = async () => {
-        // Already saved on death
+        const btn = document.getElementById('home-btn');
+        if (state.activeSavePromise) {
+            // Visual feedback
+            const originalHTML = btn.innerHTML;
+            // Show a simple spinner or just opacity
+            btn.style.opacity = '0.5';
+
+            try {
+                // Wait for save to complete
+                await state.activeSavePromise;
+            } catch (e) {
+                console.error('Save waiting failed', e);
+            }
+            btn.style.opacity = '1';
+        }
         location.reload();
     };
 

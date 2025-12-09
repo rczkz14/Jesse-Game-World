@@ -249,8 +249,29 @@ function renderMainPage(jessePrice) {
         setTimeout(() => {
           const closeBtn = document.getElementById('close-jj-modal');
           if (closeBtn) {
-            closeBtn.onclick = () => {
+            closeBtn.onclick = async () => {
               jjModalContainer.innerHTML = '';
+
+              // Refresh Ticker on Close
+              try {
+                const updatedPlayers = await getRecentPlayers();
+                const ticker = document.getElementById('ticker-content');
+                if (ticker && updatedPlayers.length > 0) {
+                  let players = [...updatedPlayers];
+                  while (players.length < 6) players = players.concat(updatedPlayers);
+                  players = players.slice(0, 6);
+
+                  const singleSet = players.map(p =>
+                    `<div style="display:inline-flex;align-items:center;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);padding:6px 16px;border-radius:30px;margin-right:24px;box-shadow:0 2px 8px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.8);">
+                      <img src="${p.icon}" style="width:28px;height:28px;margin-right:10px;border-radius:6px;object-fit:cover;" />
+                      <img src="${p.profile.picture}" style="width:28px;height:28px;border-radius:50%;margin-right:10px;border:1px solid rgba(0,0,0,0.1);object-fit:cover;" />
+                      <span style="font-weight:bold;color:#333;margin-right:8px;font-size:0.95em;">${p.profile.nickname}</span>
+                      <span style="font-weight:900;color:#E94F9B;font-size:1em;">${p.score}m</span>
+                    </div>`
+                  ).join('');
+                  ticker.innerHTML = singleSet.repeat(4);
+                }
+              } catch (e) { console.warn('Ticker refresh failed', e); }
             };
           }
           const startBtn = document.getElementById('start-jj-game');
