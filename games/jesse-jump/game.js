@@ -1557,8 +1557,20 @@ export function startGame() {
         // Update Share Links
         const url = 'https://jesse-game-world.vercel.app';
 
-        const castText = `I jumped ${state.score}m in Jesse Jump !\nCan you beat me on #JesseGameWorld ?`;
-        const tweetText = `I jumped ${state.score}m in Jesse Jump !\nCan you beat me on #JesseGameWorld ?`;
+        // Dynamic Share Text based on Score (Identity Pattern)
+        let sharePrefix = '';
+        if (state.score < 100) {
+            sharePrefix = `I tripped at ${state.score}m 😅. Jesse Jump is harder than it looks!`;
+        } else if (state.score < 300) {
+            sharePrefix = `Not bad! I reached ${state.score}m in Jesse Jump 🏃‍♂️.`;
+        } else if (state.score < 500) {
+            sharePrefix = `🚀 I just hit ${state.score}m in Jesse Jump! getting serious!`;
+        } else {
+            sharePrefix = `🔥 GOD MODE! I smashed ${state.score}m in Jesse Jump! I am UNSTOPPABLE. 🏆`;
+        }
+
+        const castText = `${sharePrefix}\n\nCan you beat my score? Play now on Frame! 👇 #JesseGameWorld`;
+        const tweetText = `${sharePrefix}\n\nCan you beat my score? #JesseGameWorld`;
 
         const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(url)}`;
         const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`;
