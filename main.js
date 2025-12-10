@@ -100,9 +100,14 @@ function renderMainPage(jessePrice) {
     </style>
     <video id="bg-video" src="./assets/background.mp4" autoplay loop muted playsinline></video>
     <div class="main-header">
-      <div class="profile" id="profile-btn" style="cursor:pointer;">
-        <img src="${profile.picture}" alt="Profile" />
-        <span>${profile.nickname}</span>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div class="profile" id="profile-btn" style="cursor:pointer;">
+          <img src="${profile.picture}" alt="Profile" />
+          <span>${profile.nickname}</span>
+        </div>
+        <div id="achievement-btn" style="width:40px; height:40px; background:rgba(255,255,255,0.9); border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; font-size:1.4em; cursor:pointer; margin-left:2px;">
+          🏆
+        </div>
       </div>
     </div>
     <div id="profile-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:30;background:rgba(0,0,0,0.28);">
@@ -140,11 +145,8 @@ function renderMainPage(jessePrice) {
       <img src="/assets/jessepp.png" alt="$JESSE" style="width:28px;height:28px;vertical-align:middle;border-radius:6px;object-fit:cover;display:inline-block;" />
       <span>$JESSE: ${jessePrice}</span>
     </div>
-    <div class="center-img" style="display:flex; justify-content:center; align-items:center; gap:20px;">
+    <div class="center-img">
       <img src="./assets/jgw.png" alt="JGW" />
-      <div id="achievement-btn" style="width:44px; height:44px; background:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; font-size:1.4em; cursor:pointer; transition:transform 0.1s;">
-        🏆
-      </div>
     </div>
     <div class="recent-ticker">
       <div class="ticker-content" id="ticker-content">
@@ -396,43 +398,76 @@ function renderMainPage(jessePrice) {
 
       function renderAchievementHub() {
         achievementContainer.innerHTML = `
-          <div id="ach-modal-bg" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;">
-            <div style="background:#fff;width:90%;max-width:380px;border-radius:24px;padding:24px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,0.2);animation:popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-              <button id="close-ach" style="position:absolute;top:16px;right:16px;background:#f0f0f0;border:none;width:32px;height:32px;border-radius:50%;font-size:1.2em;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#555;">✕</button>
+          <div id="ach-modal-bg" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;">
+             <style>
+               @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+               .pixel-font { font-family: 'Press Start 2P', cursive; }
+               .pixel-card { 
+                  background: #fff;
+                  border: 4px solid #000;
+                  box-shadow: 8px 8px 0px rgba(0,0,0,0.5);
+                  image-rendering: pixelated;
+               }
+               .pixel-btn {
+                  border: 4px solid #000;
+                  background: #E94F9B;
+                  color: #fff;
+                  font-family: 'Press Start 2P';
+                  cursor: pointer;
+                  box-shadow: 4px 4px 0px #000;
+                  transition: transform 0.1s;
+               }
+               .pixel-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
+               .pixel-list-item {
+                  border: 4px solid #eee;
+                  background: #fff;
+                  margin-bottom: 12px;
+                  cursor: pointer;
+                  transition: transform 0.1s;
+                  box-shadow: 4px 4px 0px #ddd;
+               }
+               .pixel-list-item:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px #ccc; border-color:#000; }
+               .pixel-list-item:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #ccc; }
+             </style>
+            <div class="pixel-card" style="width:90%;max-width:380px;border-radius:0;padding:20px;position:relative;animation:popIn 0.2s;">
+              <button id="close-ach" class="pixel-btn" style="position:absolute;top:-20px;right:-20px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:16px;">X</button>
               
               <div style="text-align:center;margin-bottom:24px;">
-                <div style="font-size:1.4em;font-weight:900;color:#222;margin-bottom:4px;">ACHIEVEMENTS</div>
-                <div style="font-size:0.9em;color:#888;">Select a game to view badges</div>
+                <div class="pixel-font" style="font-size:16px;color:#000;margin-bottom:8px;line-height:1.5;">ACHIEVEMENTS</div>
+                <div class="pixel-font" style="font-size:9px;color:#666;">SELECT CATEGORY</div>
               </div>
 
               <div style="display:flex;flex-direction:column;gap:12px;">
-                <!-- Jesse Jump Card -->
-                <div id="ach-jesse-jump" style="display:flex;align-items:center;background:#f5faff;border:2px solid #e0e6ed;border-radius:16px;padding:12px 16px;cursor:pointer;transition:transform 0.1s, border-color 0.1s;">
-                   <img src="./assets/jesse-jump/jessejump.png" style="width:48px;height:48px;border-radius:10px;margin-right:16px;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                
+                <!-- Jesee Jump Card -->
+                <div id="ach-jesse-jump" class="pixel-list-item" style="padding:12px;display:flex;align-items:center;">
+                   <img src="./assets/jesse-jump/jessejump.png" style="width:40px;height:40px;border:2px solid #000;margin-right:12px;">
                    <div style="flex:1;">
-                     <div style="font-weight:bold;font-size:1.1em;color:#333;">Jesse Jump</div>
-                     <div style="font-size:0.85em;color:#666;">Earn badges & rewards</div>
+                     <div class="pixel-font" style="font-size:10px;color:#000;margin-bottom:6px;">JESSE JUMP</div>
+                     <div class="pixel-font" style="font-size:8px;color:#666;">Distance Badges</div>
                    </div>
-                   <div style="font-size:1.2em;">👉</div>
+                   <div class="pixel-font" style="font-size:12px;">&gt;</div>
+                </div>
+
+                <!-- Spending Rewards Card -->
+                <div id="ach-spending" class="pixel-list-item" style="padding:12px;display:flex;align-items:center;background:#ffffff;border-color:#E94F9B;">
+                   <img src="./assets/jessepp.png" style="width:40px;height:40px;border:2px solid #000;margin-right:12px;">
+                   <div style="flex:1;">
+                     <div class="pixel-font" style="font-size:10px;color:#E94F9B;margin-bottom:6px;">$JESSE REWARDS</div>
+                     <div class="pixel-font" style="font-size:8px;color:#666;">Spending Milestones</div>
+                   </div>
+                   <div class="pixel-font" style="font-size:12px;">&gt;</div>
                 </div>
 
                 <!-- Virus Jesse (Disabled) -->
-                <div style="display:flex;align-items:center;background:#f9f9f9;border:2px solid #eee;border-radius:16px;padding:12px 16px;opacity:0.6;cursor:not-allowed;">
-                   <img src="./assets/virus-jesse/virusjesse.png" style="width:48px;height:48px;border-radius:10px;margin-right:16px;background:#fff;filter:grayscale(1);">
+                <div style="background:#ddd;border:4px solid #bbb;padding:12px;display:flex;align-items:center;opacity:0.8;">
+                   <img src="./assets/virus-jesse/virusjesse.png" style="width:40px;height:40px;border:2px solid #999;margin-right:12px;filter:grayscale(1);">
                    <div style="flex:1;">
-                     <div style="font-weight:bold;font-size:1.1em;color:#888;">Virus Jesse</div>
-                     <div style="font-size:0.85em;color:#aaa;">Coming Soon</div>
+                     <div class="pixel-font" style="font-size:10px;color:#777;margin-bottom:6px;">VIRUS JESSE</div>
+                     <div class="pixel-font" style="font-size:8px;color:#888;">Coming Soon</div>
                    </div>
                 </div>
 
-                <!-- Protect Jesse (Disabled) -->
-                <div style="display:flex;align-items:center;background:#f9f9f9;border:2px solid #eee;border-radius:16px;padding:12px 16px;opacity:0.6;cursor:not-allowed;">
-                   <img src="./assets/protect-jesse/protectjesse.png" style="width:48px;height:48px;border-radius:10px;margin-right:16px;background:#fff;filter:grayscale(1);">
-                   <div style="flex:1;">
-                     <div style="font-weight:bold;font-size:1.1em;color:#888;">Protect Jesse</div>
-                     <div style="font-size:0.85em;color:#aaa;">Coming Soon</div>
-                   </div>
-                </div>
               </div>
             </div>
           </div>
@@ -442,122 +477,169 @@ function renderMainPage(jessePrice) {
         setTimeout(() => {
           const closeBtn = document.getElementById('close-ach');
           const jjCard = document.getElementById('ach-jesse-jump');
+          const spendingCard = document.getElementById('ach-spending');
 
           if (closeBtn) {
             closeBtn.onclick = () => { achievementContainer.innerHTML = ''; };
           }
           if (jjCard) {
-            jjCard.onclick = () => { renderJesseJumpAchievements(); };
+            jjCard.onclick = () => { renderCategoryAchievements('jesse-jump'); };
+          }
+          if (spendingCard) {
+            spendingCard.onclick = () => { renderCategoryAchievements('spending'); };
           }
         }, 0);
       }
 
-      async function renderJesseJumpAchievements() {
+      async function renderCategoryAchievements(category) {
         // Loading State
         achievementContainer.innerHTML = `
-          <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:1.2em;">
-             Loading Data...
+          <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;">
+             <div class="pixel-font" style="color:#fff;font-size:12px;text-align:center;">
+               LOADING DATA...<br><br>Please Wait
+             </div>
           </div>
         `;
 
-        let bestScore = 0;
-        let totalSpent = 0;
+        let currentValue = 0;
+        let badges = [];
+        let title = '';
+        let claimedIds = new Set();
 
         try {
-          // 1. Get Best Score
-          if (profile.nickname && profile.nickname !== 'Guest') {
-            const { data: scoreData } = await supabase
-              .from('game_scores')
-              .select('score')
-              .eq('game_name', 'jesse-jump')
-              .eq('player_name', profile.nickname)
-              .order('score', { ascending: false })
-              .limit(1);
-            if (scoreData && scoreData.length > 0) bestScore = scoreData[0].score;
+          if (!profile.fid) throw new Error('No FID');
+
+          // 1. Fetch Claimed Badges
+          const { data: claims } = await supabase
+            .from('claimed_achievements')
+            .select('achievement_id')
+            .eq('player_fid', profile.fid);
+
+          if (claims) {
+            claims.forEach(c => claimedIds.add(c.achievement_id));
           }
 
-          // 2. Get Spending from player_stats
-          if (profile.fid && profile.fid !== 'Unknown') {
+          if (category === 'jesse-jump') {
+            title = 'DISTANCE RUN';
+            // Get Best Score
+            if (profile.nickname !== 'Guest') {
+              const { data: scoreData } = await supabase
+                .from('game_scores')
+                .select('score')
+                .eq('game_name', 'jesse-jump')
+                .eq('player_name', profile.nickname)
+                .order('score', { ascending: false })
+                .limit(1);
+              if (scoreData && scoreData.length > 0) currentValue = scoreData[0].score;
+            }
+            badges = [
+              { id: 'jump_1', name: 'FIRST HOP', desc: 'Reach 1m', req: 1, icon: '🥉' },
+              { id: 'jump_300', name: 'CLOUD JUMP', desc: 'Reach 300m', req: 300, icon: '🥈' },
+              { id: 'jump_750', name: 'SKY HIGH', desc: 'Reach 750m', req: 750, icon: '🥇' },
+              { id: 'jump_1000', name: 'MOON WALK', desc: 'Reach 1000m', req: 1000, icon: '🚀' },
+              { id: 'jump_2000', name: 'GOD MODE', desc: 'Reach 2000m', req: 2000, icon: '👑' }
+            ];
+          }
+          else if (category === 'spending') {
+            title = '$JESSE SPENT';
+            // Get Spending
             const { data: statData } = await supabase
               .from('player_stats')
               .select('total_jesse_spent')
-              .eq('player_fid', profile.fid) // Assuming player_fid is stored as string or int matching SDK
+              .eq('player_fid', profile.fid)
               .maybeSingle();
+            if (statData) currentValue = parseFloat(statData.total_jesse_spent) || 0;
 
-            if (statData) totalSpent = parseFloat(statData.total_jesse_spent) || 0;
+            badges = [
+              { id: 'spend_1', name: 'SUPPORTER', desc: 'Spend 1 $JESSE', req: 1, icon: '💸' },
+              { id: 'spend_50', name: 'INVESTOR', desc: 'Spend 50 $JESSE', req: 50, icon: '🎩' },
+              { id: 'spend_250', name: 'DIAMOND', desc: 'Spend 250 $JESSE', req: 250, icon: '💎' },
+              { id: 'spend_1000', name: 'WHALE', desc: 'Spend 1000 $JESSE', req: 1000, icon: '🐳' }
+            ];
           }
+
         } catch (e) {
-          console.error('Achievement fetch error', e);
+          console.warn('Ach fetch error', e);
         }
 
-        // Define Achievements
-        const distanceBadges = [
-          { name: 'First Hopper', desc: 'Reach 1m', req: 1, icon: '🥉' },
-          { name: 'Cloud Jumper', desc: 'Reach 300m', req: 300, icon: '🥈' },
-          { name: 'Sky High', desc: 'Reach 750m', req: 750, icon: '🥇' },
-          { name: 'Moon Walker', desc: 'Reach 1000m', req: 1000, icon: '🚀' },
-          { name: 'God Mode', desc: 'Reach 2000m', req: 2000, icon: '👑' }
-        ];
+        const renderBadgeItem = (b) => {
+          const unlocked = currentValue >= b.req;
+          const isClaimed = claimedIds.has(b.id);
 
-        const spendingBadges = [
-          { name: 'Supporter', desc: 'Spend 1 $JESSE', req: 1, icon: '💸' },
-          { name: 'Investor', desc: 'Spend 50 $JESSE', req: 50, icon: '🎩' },
-          { name: 'Diamond Hands', desc: 'Spend 250 $JESSE', req: 250, icon: '💎' },
-          { name: 'The Whale', desc: 'Spend 1000 $JESSE', req: 1000, icon: '🐳' }
-        ];
+          // Visual States
+          // 1. Locked: Greyed out, Lock icon
+          // 2. Unlocked (Not Claimed): Color, 'CLAIM' button active
+          // 3. Claimed: Color, 'CLAIMED' button disabled green
 
-        const renderBadge = (b, currentVal) => {
-          const unlocked = currentVal >= b.req;
-          const btnState = unlocked ? 'Claim' : 'Locked';
-          const btnClass = unlocked ? 'ach-btn-claim' : 'ach-btn-locked';
+          let btnHtml = '';
+          if (!unlocked) {
+            btnHtml = `<button class="pixel-btn" style="background:#ccc;border-color:#999;color:#666;font-size:8px;padding:8px;cursor:not-allowed;" disabled>LOCKED</button>`;
+          } else if (isClaimed) {
+            btnHtml = `<button class="pixel-btn" style="background:#55dbcb;border-color:#000;color:#000;font-size:8px;padding:8px;cursor:default;" disabled>CLAIMED</button>`;
+          } else {
+            // Unlocked & Unclaimed
+            btnHtml = `<button id="btn-${b.id}" class="pixel-btn" style="font-size:8px;padding:8px;" onclick="claimBadge('${b.id}')">CLAIM</button>`;
+          }
+
           const iconStyle = unlocked ? '' : 'filter:grayscale(1);opacity:0.5;';
 
           return `
-             <div style="display:flex;align-items:center;background:${unlocked ? '#fff' : '#f9f9f9'};padding:12px;border-radius:12px;margin-bottom:10px;border:1px solid ${unlocked ? '#E94F9B22' : '#eee'};">
-               <div style="font-size:2em;margin-right:14px;${iconStyle}">${b.icon}</div>
+             <div style="border:4px solid #000;background:${unlocked ? '#fff' : '#eee'};padding:12px;margin-bottom:12px;display:flex;align-items:center;box-shadow:4px 4px 0px rgba(0,0,0,0.2);">
+               <div style="font-size:24px;margin-right:12px;${iconStyle}">${b.icon}</div>
                <div style="flex:1;">
-                 <div style="font-weight:bold;color:${unlocked ? '#222' : '#888'};">${b.name}</div>
-                 <div style="font-size:0.85em;color:#888;">${b.desc}</div>
-                 ${!unlocked ? `<div style="font-size:0.75em;color:#aaa;margin-top:2px;">Progress: ${Math.floor(currentVal)}/${b.req}</div>` : ''}
+                 <div class="pixel-font" style="font-size:10px;color:#000;margin-bottom:6px;">${b.name}</div>
+                 <div class="pixel-font" style="font-size:8px;color:#666;">${b.desc}</div>
+                 ${!unlocked ? `<div class="pixel-font" style="font-size:7px;color:#aaa;margin-top:4px;">${Math.floor(currentValue)} / ${b.req}</div>` : ''}
                </div>
-               <button class="${btnClass}" onclick="this.innerText='Claimed';this.style.background='#4CAF50';this.style.borderColor='#4CAF50';this.disabled=true;" ${!unlocked ? 'disabled' : ''}>
-                 ${unlocked ? 'Claim' : '🔒'}
-               </button>
+               <div>${btnHtml}</div>
              </div>
            `;
         };
 
+        // Attach global function for claim onclick (hacky but works for template string)
+        window.claimBadge = async (badgeId) => {
+          const btn = document.getElementById(`btn-${badgeId}`);
+          if (btn) {
+            btn.innerText = '...';
+            btn.disabled = true;
+          }
+          try {
+            const { error } = await supabase.from('claimed_achievements').insert({
+              player_fid: profile.fid,
+              achievement_id: badgeId
+            });
+            if (!error) {
+              if (btn) {
+                btn.innerText = 'CLAIMED';
+                btn.style.background = '#55dbcb';
+                btn.style.color = '#000';
+                btn.style.cursor = 'default';
+                claimedIds.add(badgeId); // Update local state strictly
+              }
+            } else {
+              console.error(error);
+              if (btn) { btn.innerText = 'ERROR'; btn.disabled = false; }
+            }
+          } catch (e) {
+            console.error(e);
+            if (btn) { btn.innerText = 'ERROR'; btn.disabled = false; }
+          }
+        };
+
         const html = `
-          <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;">
-            <div style="background:#fff;width:90%;max-width:380px;height:80vh;border-radius:24px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,0.2);display:flex;flex-direction:column;overflow:hidden;">
-              
-              <!-- Header -->
-              <div style="padding:20px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;background:#fff;z-index:2;">
-                <button id="back-to-hub" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:#333;">← Back</button>
-                <div style="font-weight:900;color:#E94F9B;">JESSE JUMP</div>
-                <div style="width:40px;"></div> <!-- spacer -->
-              </div>
-
-              <!-- Content -->
-              <div style="flex:1;overflow-y:auto;padding:20px;background:#fcfcfc;">
+          <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;">
+             <div class="pixel-card" style="width:90%;max-width:380px;height:70vh;border-radius:0;position:relative;display:flex;flex-direction:column;padding:0;">
                 
-                <div style="font-weight:bold;color:#555;margin-bottom:12px;display:flex;align-items:center;font-size:0.9em;">
-                   <span style="font-size:1.2em;margin-right:6px;">🏃‍♂️</span> DISTANCE MILESTONES
+                <!-- Header -->
+                <div style="padding:16px;border-bottom:4px solid #000;background:#E94F9B;display:flex;align-items:center;">
+                   <button id="back-to-hub" class="pixel-btn" style="font-size:12px;padding:6px;margin-right:12px;background:#fff;color:#000;">&lt;</button>
+                   <div class="pixel-font" style="color:#fff;font-size:12px;">${title}</div>
                 </div>
-                ${distanceBadges.map(b => renderBadge(b, bestScore)).join('')}
 
-                <div style="font-weight:bold;color:#555;margin:24px 0 12px 0;display:flex;align-items:center;font-size:0.9em;">
-                   <span style="font-size:1.2em;margin-right:6px;">💰</span> SPENDING REWARDS
+                <div style="flex:1;overflow-y:auto;padding:16px;background:#f0f0f0;">
+                   ${badges.map(renderBadgeItem).join('')}
                 </div>
-                ${spendingBadges.map(b => renderBadge(b, totalSpent)).join('')}
-
-              </div>
-            </div>
-            <style>
-               .ach-btn-claim { background:#fff; color:#E94F9B; border:2px solid #E94F9B; padding:6px 16px; border-radius:20px; font-weight:bold; font-size:0.85em; cursor:pointer; min-width:80px; transition:all 0.2s; }
-               .ach-btn-claim:active { transform:scale(0.95); }
-               .ach-btn-locked { background:none; border:none; color:#ccc; font-size:1.2em; cursor:not-allowed; min-width:80px; }
-            </style>
+             </div>
           </div>
         `;
 
