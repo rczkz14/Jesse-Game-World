@@ -1834,22 +1834,28 @@ export function startGame() {
                     fid = context.user.fid;
                 }
             }
+            // Fallback: Check if there's a global profile object from main.js (if accessible globally, though 'let' prevents window.profile)
+            // But we can check window.profile if we exposed it, or just rely on SDK.
+
             if (!fid) {
-                console.warn('No FID found, cannot record spending stats');
+                console.warn('No FID, cannot record spending');
+                // alert('Debug: No FID found. Cannot record spending.'); 
                 return;
             }
 
-            console.log(`Recording spending: ${amount} for FID: ${fid}`);
+            const fidStr = String(fid); // Ensure it matches 'text' column type if needed
+            // alert(`Debug: Recording ${amount} for FID ${fidStr}`);
 
             // 1. Check existing
             const { data: existing, error: fetchError } = await supabase
                 .from('player_stats')
                 .select('id, total_jesse_spent')
-                .eq('player_fid', fid)
+                .eq('player_fid', fidStr)
                 .maybeSingle();
 
             if (fetchError) {
                 console.error('Error fetching player stats:', fetchError);
+                alert('Debug: Fetch Error - ' + fetchError.message);
                 return;
             }
 
@@ -1864,19 +1870,25 @@ export function startGame() {
                     })
                     .eq('id', existing.id);
 
-                if (updateError) console.error('Error updating stats:', updateError);
+                if (updateError) {
+                    console.error('Error updating stats:', updateError);
+                    alert('Debug: Update Error - ' + updateError.message);
+                }
 
             } else {
                 // 3. Insert new
                 const { error: insertError } = await supabase
                     .from('player_stats')
                     .insert({
-                        player_fid: fid,
+                        player_fid: fidStr,
                         total_jesse_spent: amount,
                         updated_at: new Date().toISOString()
                     });
 
-                if (insertError) console.error('Error inserting stats:', insertError);
+                if (insertError) {
+                    console.error('Error inserting stats:', insertError);
+                    alert('Debug: Insert Error - ' + insertError.message);
+                }
             }
 
         } catch (err) {
