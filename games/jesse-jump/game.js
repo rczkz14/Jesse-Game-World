@@ -1804,6 +1804,10 @@ export function startGame() {
             });
             console.log('Revive Transaction Result:', result);
             state.hasRevived = true;
+
+            // Record Spending in Background
+            recordSpending(state.reviveAmount).catch(err => console.error('Failed to record spending:', err));
+
             reviveGame();
 
             btn.style.opacity = '1';
@@ -1818,6 +1822,67 @@ export function startGame() {
             }, 2000);
         }
     };
+
+    async function recordSpending(amount) {
+        if (!amount) return;
+        try {
+            // Get FID
+            let fid = null;
+            if (window.sdk && window.sdk.context) {
+                const context = await window.sdk.context;
+                if (context && context.user && context.user.fid) {
+                    fid = context.user.fid;
+                }
+            }
+            if (!fid) {
+                console.warn('No FID found, cannot record spending stats');
+                return;
+            }
+
+            console.log(`Recording spending: ${amount} for FID: ${fid}`);
+
+            // 1. Check existing
+            const { data: existing, error: fetchError } = await supabase
+                .from('player_stats')
+                .select('id, total_jesse_spent')
+                .eq('player_fid', fid)
+                .maybeSingle();
+
+            if (fetchError) {
+                console.error('Error fetching player stats:', fetchError);
+                return;
+            }
+
+            if (existing) {
+                // 2. Update
+                const newTotal = (parseFloat(existing.total_jesse_spent) || 0) + parseFloat(amount);
+                const { error: updateError } = await supabase
+                    .from('player_stats')
+                    .update({
+                        total_jesse_spent: newTotal,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', existing.id);
+
+                if (updateError) console.error('Error updating stats:', updateError);
+
+            } else {
+                // 3. Insert new
+                const { error: insertError } = await supabase
+                    .from('player_stats')
+                    .insert({
+                        player_fid: fid,
+                        total_jesse_spent: amount,
+                        updated_at: new Date().toISOString()
+                    });
+
+                if (insertError) console.error('Error inserting stats:', insertError);
+            }
+
+        } catch (err) {
+            console.error('recordSpending Exception:', err);
+        }
+    }
 
     document.getElementById('home-btn').onclick = async () => {
         const btn = document.getElementById('home-btn');

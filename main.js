@@ -140,8 +140,11 @@ function renderMainPage(jessePrice) {
       <img src="/assets/jessepp.png" alt="$JESSE" style="width:28px;height:28px;vertical-align:middle;border-radius:6px;object-fit:cover;display:inline-block;" />
       <span>$JESSE: ${jessePrice}</span>
     </div>
-    <div class="center-img">
+    <div class="center-img" style="display:flex; justify-content:center; align-items:center; gap:20px;">
       <img src="./assets/jgw.png" alt="JGW" />
+      <div id="achievement-btn" style="width:44px; height:44px; background:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; font-size:1.4em; cursor:pointer; transition:transform 0.1s;">
+        🏆
+      </div>
     </div>
     <div class="recent-ticker">
       <div class="ticker-content" id="ticker-content">
@@ -173,6 +176,7 @@ function renderMainPage(jessePrice) {
       <div style="color:#E94F9B;font-weight:bold;">Tip : Transact with $JESSE only for micro value. DYOR</div>
       <button id="close-readme" style="margin-top:12px;padding:4px 14px;background:#E94F9B;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:0.9em;">Close</button>
     </div>
+    <div id="achievement-modal-container"></div>
   `;
 
   requestAnimationFrame(() => {
@@ -378,6 +382,192 @@ function renderMainPage(jessePrice) {
           }
         }, 0);
       };
+    }
+
+    // Achievement Modal Logic
+    const achievementBtn = document.getElementById('achievement-btn');
+    const achievementContainer = document.getElementById('achievement-modal-container');
+
+    if (achievementBtn && achievementContainer) {
+      achievementBtn.onclick = () => {
+        // Render Hub
+        renderAchievementHub();
+      };
+
+      function renderAchievementHub() {
+        achievementContainer.innerHTML = `
+          <div id="ach-modal-bg" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;">
+            <div style="background:#fff;width:90%;max-width:380px;border-radius:24px;padding:24px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,0.2);animation:popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+              <button id="close-ach" style="position:absolute;top:16px;right:16px;background:#f0f0f0;border:none;width:32px;height:32px;border-radius:50%;font-size:1.2em;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#555;">✕</button>
+              
+              <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:1.4em;font-weight:900;color:#222;margin-bottom:4px;">ACHIEVEMENTS</div>
+                <div style="font-size:0.9em;color:#888;">Select a game to view badges</div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <!-- Jesse Jump Card -->
+                <div id="ach-jesse-jump" style="display:flex;align-items:center;background:#f5faff;border:2px solid #e0e6ed;border-radius:16px;padding:12px 16px;cursor:pointer;transition:transform 0.1s, border-color 0.1s;">
+                   <img src="./assets/jesse-jump/jessejump.png" style="width:48px;height:48px;border-radius:10px;margin-right:16px;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                   <div style="flex:1;">
+                     <div style="font-weight:bold;font-size:1.1em;color:#333;">Jesse Jump</div>
+                     <div style="font-size:0.85em;color:#666;">Earn badges & rewards</div>
+                   </div>
+                   <div style="font-size:1.2em;">👉</div>
+                </div>
+
+                <!-- Virus Jesse (Disabled) -->
+                <div style="display:flex;align-items:center;background:#f9f9f9;border:2px solid #eee;border-radius:16px;padding:12px 16px;opacity:0.6;cursor:not-allowed;">
+                   <img src="./assets/virus-jesse/virusjesse.png" style="width:48px;height:48px;border-radius:10px;margin-right:16px;background:#fff;filter:grayscale(1);">
+                   <div style="flex:1;">
+                     <div style="font-weight:bold;font-size:1.1em;color:#888;">Virus Jesse</div>
+                     <div style="font-size:0.85em;color:#aaa;">Coming Soon</div>
+                   </div>
+                </div>
+
+                <!-- Protect Jesse (Disabled) -->
+                <div style="display:flex;align-items:center;background:#f9f9f9;border:2px solid #eee;border-radius:16px;padding:12px 16px;opacity:0.6;cursor:not-allowed;">
+                   <img src="./assets/protect-jesse/protectjesse.png" style="width:48px;height:48px;border-radius:10px;margin-right:16px;background:#fff;filter:grayscale(1);">
+                   <div style="flex:1;">
+                     <div style="font-weight:bold;font-size:1.1em;color:#888;">Protect Jesse</div>
+                     <div style="font-size:0.85em;color:#aaa;">Coming Soon</div>
+                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <style>@keyframes popIn { 0% { opacity:0; transform:scale(0.9); } 100% { opacity:1; transform:scale(1); } }</style>
+        `;
+
+        setTimeout(() => {
+          const closeBtn = document.getElementById('close-ach');
+          const jjCard = document.getElementById('ach-jesse-jump');
+
+          if (closeBtn) {
+            closeBtn.onclick = () => { achievementContainer.innerHTML = ''; };
+          }
+          if (jjCard) {
+            jjCard.onclick = () => { renderJesseJumpAchievements(); };
+          }
+        }, 0);
+      }
+
+      async function renderJesseJumpAchievements() {
+        // Loading State
+        achievementContainer.innerHTML = `
+          <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:1.2em;">
+             Loading Data...
+          </div>
+        `;
+
+        let bestScore = 0;
+        let totalSpent = 0;
+
+        try {
+          // 1. Get Best Score
+          if (profile.nickname && profile.nickname !== 'Guest') {
+            const { data: scoreData } = await supabase
+              .from('game_scores')
+              .select('score')
+              .eq('game_name', 'jesse-jump')
+              .eq('player_name', profile.nickname)
+              .order('score', { ascending: false })
+              .limit(1);
+            if (scoreData && scoreData.length > 0) bestScore = scoreData[0].score;
+          }
+
+          // 2. Get Spending from player_stats
+          if (profile.fid && profile.fid !== 'Unknown') {
+            const { data: statData } = await supabase
+              .from('player_stats')
+              .select('total_jesse_spent')
+              .eq('player_fid', profile.fid) // Assuming player_fid is stored as string or int matching SDK
+              .maybeSingle();
+
+            if (statData) totalSpent = parseFloat(statData.total_jesse_spent) || 0;
+          }
+        } catch (e) {
+          console.error('Achievement fetch error', e);
+        }
+
+        // Define Achievements
+        const distanceBadges = [
+          { name: 'First Hopper', desc: 'Reach 1m', req: 1, icon: '🥉' },
+          { name: 'Cloud Jumper', desc: 'Reach 300m', req: 300, icon: '🥈' },
+          { name: 'Sky High', desc: 'Reach 750m', req: 750, icon: '🥇' },
+          { name: 'Moon Walker', desc: 'Reach 1000m', req: 1000, icon: '🚀' },
+          { name: 'God Mode', desc: 'Reach 2000m', req: 2000, icon: '👑' }
+        ];
+
+        const spendingBadges = [
+          { name: 'Supporter', desc: 'Spend 1 $JESSE', req: 1, icon: '💸' },
+          { name: 'Investor', desc: 'Spend 50 $JESSE', req: 50, icon: '🎩' },
+          { name: 'Diamond Hands', desc: 'Spend 250 $JESSE', req: 250, icon: '💎' },
+          { name: 'The Whale', desc: 'Spend 1000 $JESSE', req: 1000, icon: '🐳' }
+        ];
+
+        const renderBadge = (b, currentVal) => {
+          const unlocked = currentVal >= b.req;
+          const btnState = unlocked ? 'Claim' : 'Locked';
+          const btnClass = unlocked ? 'ach-btn-claim' : 'ach-btn-locked';
+          const iconStyle = unlocked ? '' : 'filter:grayscale(1);opacity:0.5;';
+
+          return `
+             <div style="display:flex;align-items:center;background:${unlocked ? '#fff' : '#f9f9f9'};padding:12px;border-radius:12px;margin-bottom:10px;border:1px solid ${unlocked ? '#E94F9B22' : '#eee'};">
+               <div style="font-size:2em;margin-right:14px;${iconStyle}">${b.icon}</div>
+               <div style="flex:1;">
+                 <div style="font-weight:bold;color:${unlocked ? '#222' : '#888'};">${b.name}</div>
+                 <div style="font-size:0.85em;color:#888;">${b.desc}</div>
+                 ${!unlocked ? `<div style="font-size:0.75em;color:#aaa;margin-top:2px;">Progress: ${Math.floor(currentVal)}/${b.req}</div>` : ''}
+               </div>
+               <button class="${btnClass}" onclick="this.innerText='Claimed';this.style.background='#4CAF50';this.style.borderColor='#4CAF50';this.disabled=true;" ${!unlocked ? 'disabled' : ''}>
+                 ${unlocked ? 'Claim' : '🔒'}
+               </button>
+             </div>
+           `;
+        };
+
+        const html = `
+          <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;">
+            <div style="background:#fff;width:90%;max-width:380px;height:80vh;border-radius:24px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,0.2);display:flex;flex-direction:column;overflow:hidden;">
+              
+              <!-- Header -->
+              <div style="padding:20px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;background:#fff;z-index:2;">
+                <button id="back-to-hub" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:#333;">← Back</button>
+                <div style="font-weight:900;color:#E94F9B;">JESSE JUMP</div>
+                <div style="width:40px;"></div> <!-- spacer -->
+              </div>
+
+              <!-- Content -->
+              <div style="flex:1;overflow-y:auto;padding:20px;background:#fcfcfc;">
+                
+                <div style="font-weight:bold;color:#555;margin-bottom:12px;display:flex;align-items:center;font-size:0.9em;">
+                   <span style="font-size:1.2em;margin-right:6px;">🏃‍♂️</span> DISTANCE MILESTONES
+                </div>
+                ${distanceBadges.map(b => renderBadge(b, bestScore)).join('')}
+
+                <div style="font-weight:bold;color:#555;margin:24px 0 12px 0;display:flex;align-items:center;font-size:0.9em;">
+                   <span style="font-size:1.2em;margin-right:6px;">💰</span> SPENDING REWARDS
+                </div>
+                ${spendingBadges.map(b => renderBadge(b, totalSpent)).join('')}
+
+              </div>
+            </div>
+            <style>
+               .ach-btn-claim { background:#fff; color:#E94F9B; border:2px solid #E94F9B; padding:6px 16px; border-radius:20px; font-weight:bold; font-size:0.85em; cursor:pointer; min-width:80px; transition:all 0.2s; }
+               .ach-btn-claim:active { transform:scale(0.95); }
+               .ach-btn-locked { background:none; border:none; color:#ccc; font-size:1.2em; cursor:not-allowed; min-width:80px; }
+            </style>
+          </div>
+        `;
+
+        achievementContainer.innerHTML = html;
+
+        setTimeout(() => {
+          const backBtn = document.getElementById('back-to-hub');
+          if (backBtn) backBtn.onclick = () => renderAchievementHub();
+        }, 0);
+      }
     }
   });
 }
