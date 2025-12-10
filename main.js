@@ -449,6 +449,24 @@ function renderMainPage(jessePrice) {
                    <div class="pixel-font" style="font-size:12px;">&gt;</div>
                 </div>
 
+                <!-- Virus Jesse (Disabled) -->
+                <div style="background:#ddd;border:4px solid #bbb;padding:12px;display:flex;align-items:center;opacity:0.8;">
+                   <img src="./assets/virus-jesse/virusjesse.png" style="width:40px;height:40px;border:2px solid #999;margin-right:12px;filter:grayscale(1);">
+                   <div style="flex:1;">
+                     <div class="pixel-font" style="font-size:10px;color:#777;margin-bottom:6px;">VIRUS JESSE</div>
+                     <div class="pixel-font" style="font-size:8px;color:#888;">Coming Soon</div>
+                   </div>
+                </div>
+
+                <!-- Protect Jesse (Disabled) -->
+                <div style="background:#ddd;border:4px solid #bbb;padding:12px;display:flex;align-items:center;opacity:0.8;">
+                   <img src="./assets/protect-jesse/protectjesse.png" style="width:40px;height:40px;border:2px solid #999;margin-right:12px;filter:grayscale(1);">
+                   <div style="flex:1;">
+                     <div class="pixel-font" style="font-size:10px;color:#777;margin-bottom:6px;">PROTECT JESSE</div>
+                     <div class="pixel-font" style="font-size:8px;color:#888;">Coming Soon</div>
+                   </div>
+                </div>
+
                 <!-- Spending Rewards Card -->
                 <div id="ach-spending" class="pixel-list-item" style="padding:12px;display:flex;align-items:center;background:#ffffff;border-color:#E94F9B;">
                    <img src="./assets/jessepp.png" style="width:40px;height:40px;border:2px solid #000;margin-right:12px;">
@@ -457,15 +475,6 @@ function renderMainPage(jessePrice) {
                      <div class="pixel-font" style="font-size:8px;color:#666;">Spending Milestones</div>
                    </div>
                    <div class="pixel-font" style="font-size:12px;">&gt;</div>
-                </div>
-
-                <!-- Virus Jesse (Disabled) -->
-                <div style="background:#ddd;border:4px solid #bbb;padding:12px;display:flex;align-items:center;opacity:0.8;">
-                   <img src="./assets/virus-jesse/virusjesse.png" style="width:40px;height:40px;border:2px solid #999;margin-right:12px;filter:grayscale(1);">
-                   <div style="flex:1;">
-                     <div class="pixel-font" style="font-size:10px;color:#777;margin-bottom:6px;">VIRUS JESSE</div>
-                     <div class="pixel-font" style="font-size:8px;color:#888;">Coming Soon</div>
-                   </div>
                 </div>
 
               </div>
