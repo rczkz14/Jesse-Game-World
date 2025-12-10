@@ -1515,17 +1515,31 @@ export function startGame() {
 
         console.log('Saving data payload:', playerData);
 
+        // SECURE SAVE: Use RPC function instead of direct insert
+        // This prevents users from bypassing validation logic
+        const payload = {
+            p_game_name: playerData.game_name,
+            p_player_name: playerData.player_name,
+            p_player_avatar: playerData.player_avatar,
+            p_score: playerData.score,
+            p_player_fid: playerData.player_fid // Optional
+        };
+
+        console.log('Submitting score securely via RPC:', payload);
+
         const { data, error } = await supabase
-            .from('game_scores')
-            .insert(playerData)
-            .select(); // Ensure we get the return data back
+            .rpc('submit_score', payload);
 
         if (error) {
-            console.error('Supabase Insert Error:', error);
+            console.error('Score Submission Failed:', error);
+            // If the error is our custom "Suspiciously high", show it
+            if (error.message.includes('Suspiciously high')) {
+                console.warn('Cheating detected or score limit reached');
+            }
             return null;
         } else {
-            console.log('Score saved successfully:', data);
-            return data && data[0] ? data[0].id : null;
+            console.log('Score saved securely:', data);
+            return data ? data.id : null;
         }
     }
 
