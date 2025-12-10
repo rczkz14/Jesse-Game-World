@@ -617,7 +617,8 @@ function renderMainPage(jessePrice) {
               player_fid: profile.fid,
               achievement_id: badgeId
             });
-            if (!error) {
+            // Treat Duplicate Key (23505) as Success
+            if (!error || error.code === '23505') {
               if (btn) {
                 btn.innerText = 'CLAIMED';
                 btn.style.background = '#55dbcb';
@@ -627,6 +628,7 @@ function renderMainPage(jessePrice) {
               }
             } else {
               console.error(error);
+              alert('Claim Error: ' + (error.message || error.code));
               if (btn) { btn.innerText = 'ERROR'; btn.disabled = false; }
             }
           } catch (e) {
