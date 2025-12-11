@@ -124,8 +124,12 @@ function renderMainPage(jessePrice) {
           <div style="background:#f5f5f5;padding:4px 14px;border-radius:8px;font-size:0.95em;margin-bottom:16px;">FID: ${profile.fid || 'Unknown'}</div>
         </div>
         <div style="background:#f5faff;padding:12px 18px;border-radius:12px;margin:0 24px 18px 24px;font-size:0.98em;color:#2a5bd7;font-weight:bold;">CONNECTED WALLET<br><span id="wallet-address-display" style="color:#888;font-weight:normal;">Not Connected</span></div>
-        <div style="padding:0 24px;">
+          <div style="padding:0 24px;">
           <div style="font-weight:bold;color:#888;font-size:0.98em;margin-bottom:10px;">GAME STATS</div>
+          <div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px #0001;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;"><span style="font-size:20px;margin-right:10px;">✨</span><span style="font-weight:bold;">Total Points</span></div>
+            <div style="font-size:1.1em;color:#E94F9B;font-weight:900;" id="profile-points">...</div>
+          </div>
           <div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px #0001;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;margin-bottom:10px;">
             <div style="display:flex;align-items:center;"><img src="./assets/jesse-jump/jessejump.png" style="width:32px;height:32px;margin-right:10px;" /><span style="font-weight:bold;">Jesse Jump</span></div>
             <div style="font-size:1em;color:#222;font-weight:bold;">Best Score <span id="best-score-display" style="font-size:1.1em;">0m</span></div>
@@ -200,6 +204,19 @@ function renderMainPage(jessePrice) {
 
         const walletDisplay = document.getElementById('wallet-address-display');
         const scoreDisplay = document.getElementById('best-score-display');
+        const pointsDisplay = document.getElementById('profile-points');
+
+        // Fetch Points
+        if (pointsDisplay) {
+          pointsDisplay.innerText = 'Loading...';
+          if (profile.fid) {
+            const { data } = await supabase.from('player_stats').select('points').eq('player_fid', profile.fid).maybeSingle();
+            const pts = data ? (data.points || 0) : 0;
+            pointsDisplay.innerText = pts + ' PTS';
+          } else {
+            pointsDisplay.innerText = '0 PTS';
+          }
+        }
 
         // 1. Fetch Wallet Address
         if (walletDisplay) {
@@ -542,11 +559,12 @@ function renderMainPage(jessePrice) {
               if (scoreData && scoreData.length > 0) currentValue = scoreData[0].score;
             }
             badges = [
-              { id: 'jump_1', name: 'FIRST HOP', desc: 'Reach 1m', req: 1, icon: '🥉' },
-              { id: 'jump_300', name: 'CLOUD JUMP', desc: 'Reach 300m', req: 300, icon: '🥈' },
-              { id: 'jump_750', name: 'SKY HIGH', desc: 'Reach 750m', req: 750, icon: '🥇' },
-              { id: 'jump_1000', name: 'MOON WALK', desc: 'Reach 1000m', req: 1000, icon: '🚀' },
-              { id: 'jump_2000', name: 'GOD MODE', desc: 'Reach 2000m', req: 2000, icon: '👑' }
+              { id: 'jump_1', name: 'FIRST HOP', desc: 'Reach 1m', req: 1, icon: '🥉', points: 10 },
+              { id: 'jump_300', name: 'CLOUD JUMP', desc: 'Reach 300m', req: 300, icon: '🥈', points: 50 },
+              { id: 'jump_750', name: 'SKY HIGH', desc: 'Reach 750m', req: 750, icon: '🥇', points: 100 },
+              { id: 'jump_1000', name: 'MOON WALK', desc: 'Reach 1000m', req: 1000, icon: '🚀', points: 250 },
+              { id: 'jump_2000', name: 'GALACTIC', desc: 'Reach 2000m', req: 2000, icon: '🪐', points: 500 },
+              { id: 'jump_3000', name: 'GOD MODE', desc: 'Reach 3000m', req: 3000, icon: '👑', points: 1000 }
             ];
           }
           else if (category === 'spending') {
@@ -598,6 +616,7 @@ function renderMainPage(jessePrice) {
                <div style="flex:1;">
                  <div class="pixel-font" style="font-size:10px;color:#000;margin-bottom:6px;">${b.name}</div>
                  <div class="pixel-font" style="font-size:8px;color:#666;">${b.desc}</div>
+                 <div class="pixel-font" style="font-size:8px;color:#E94F9B;margin-top:2px;">+${b.points || 0} PTS</div>
                  ${!unlocked ? `<div class="pixel-font" style="font-size:7px;color:#aaa;margin-top:4px;">${Math.floor(currentValue)} / ${b.req}</div>` : ''}
                </div>
                <div>${btnHtml}</div>
@@ -625,6 +644,11 @@ function renderMainPage(jessePrice) {
                 btn.style.color = '#000';
                 btn.style.cursor = 'default';
                 claimedIds.add(badgeId); // Update local state strictly
+                // Award Points
+                const item = badges.find(b => b.id === badgeId);
+                if (item && item.points) {
+                  awardPoints(item.points);
+                }
               }
             } else {
               console.error(error);
@@ -772,6 +796,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           ticker.innerHTML = singleSet.repeat(4);
         }
 
+        // Initialize Daily Tasks
+        initDailyTasks();
+
       } catch (err) {
         console.warn('Background data fetch error:', err);
       }
@@ -782,3 +809,187 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGateScreen();
   }
 });
+
+// --- DAILY TASKS SYSTEM ---
+function initDailyTasks() {
+  const btnContainer = document.querySelector('.main-header > div');
+  if (btnContainer) {
+    const dailyBtn = document.createElement('div');
+    dailyBtn.id = 'daily-btn';
+    dailyBtn.style.cssText = 'width:40px; height:40px; background:rgba(255,255,255,0.9); border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; font-size:1.4em; cursor:pointer; margin-left:2px; margin-top:12px;';
+    dailyBtn.innerHTML = '📅';
+    dailyBtn.onclick = openDailyTasks;
+    btnContainer.appendChild(dailyBtn);
+  }
+}
+
+function getDailyState() {
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const key = `jgw_daily_${today}`;
+  try {
+    return JSON.parse(localStorage.getItem(key)) || { play: false, cast: false, tweet: false, spend: false };
+  } catch {
+    return { play: false, cast: false, tweet: false, spend: false };
+  }
+}
+
+function setDailyTaskComplete(task) {
+  const today = new Date().toISOString().slice(0, 10);
+  const key = `jgw_daily_${today}`;
+  const state = getDailyState();
+  if (!state[task]) {
+    state[task] = true;
+    localStorage.setItem(key, JSON.stringify(state));
+    // Award Daily Points (50)
+    if (window.awardPoints) window.awardPoints(50);
+
+    // Refresh modal if open
+    if (document.getElementById('daily-modal-bg')) {
+      openDailyTasks();
+    }
+  }
+}
+
+// Global Award Points Helper
+window.awardPoints = async (amount) => {
+  if (!profile.fid) return;
+  console.log('Awarding points: ', amount);
+  try {
+    await supabase.rpc('add_points', { p_fid: profile.fid, p_amount: amount });
+    // Optional: Toast notification could go here
+  } catch (e) {
+    console.error('Point award failed', e);
+  }
+};
+
+// Hook into game start
+const originalStart = startJesseJump;
+startJesseJump = function () {
+  setDailyTaskComplete('play');
+  originalStart.apply(this, arguments);
+};
+
+async function openDailyTasks() {
+  let state = getDailyState(); // { play, cast, tweet, spend }
+  const container = document.getElementById('achievement-modal-container'); // Reuse container
+  if (!container) return;
+
+  // Show Loading
+  container.innerHTML = `
+    <div id="daily-loading" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;">
+       <div style="font-family:'Press Start 2P', cursive;color:#fff;font-size:12px;">CHECKING LOGS...</div>
+    </div>
+  `;
+
+  // Verify Spending Task via Supabase
+  if (!state.spend && profile.fid) {
+    try {
+      const { data, error } = await supabase
+        .from('player_stats')
+        .select('updated_at')
+        .eq('player_fid', profile.fid)
+        .maybeSingle();
+
+      if (data && data.updated_at) {
+        const lastUpdate = new Date(data.updated_at).toISOString().slice(0, 10);
+        const today = new Date().toISOString().slice(0, 10);
+        if (lastUpdate === today) {
+          setDailyTaskComplete('spend');
+          state = getDailyState(); // Refresh state
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to verify daily spend:', e);
+    }
+  }
+
+  const renderTask = (id, name, desc, isDone, actionFn, actionLabel) => {
+    const btnColor = isDone ? '#55dbcb' : '#E94F9B';
+    const btnText = isDone ? 'DONE' : actionLabel;
+    const btnCursor = isDone ? 'default' : 'pointer';
+
+    // Pixel verification checkmark
+    const check = isDone ? '✅' : '⏳';
+
+    return `
+      <div class="pixel-list-item" style="padding:12px;display:flex;align-items:center;margin-bottom:12px;background:#fff;border:4px solid #eee;box-shadow:4px 4px 0 #ddd;">
+         <div style="font-size:20px;margin-right:12px;">${check}</div>
+         <div style="flex:1;">
+           <div class="pixel-font" style="font-size:10px;color:#000;margin-bottom:6px;">${name}</div>
+           <div class="pixel-font" style="font-size:8px;color:#666;">${desc}</div>
+           <div class="pixel-font" style="font-size:8px;color:#E94F9B;margin-top:2px;">+50 PTS</div>
+         </div>
+         <button id="task-btn-${id}" class="pixel-btn" 
+           style="font-size:8px;padding:8px;background:${btnColor};border-color:#000;color:${isDone ? '#000' : '#fff'};cursor:${btnCursor};width:60px;"
+           ${isDone ? 'disabled' : ''}>
+           ${btnText}
+         </button>
+      </div>
+    `;
+  };
+
+  const html = `
+    <div id="daily-modal-bg" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;">
+       <div class="pixel-card" style="width:90%;max-width:380px;border-radius:0;padding:20px;position:relative;background:#fff;border:4px solid #000;box-shadow:8px 8px 0 rgba(0,0,0,0.5);">
+         <button id="close-daily" class="pixel-btn" style="position:absolute;top:-20px;right:-20px;width:40px;height:40px;font-size:16px;">X</button>
+         
+         <div style="text-align:center;margin-bottom:24px;">
+           <div class="pixel-font" style="font-size:16px;color:#000;border-bottom:4px solid #FFD600;display:inline-block;padding-bottom:4px;">DAILY TASKS</div>
+         </div>
+
+         <div style="display:flex;flex-direction:column;">
+           ${renderTask('play', 'PLAY JESSE JUMP', 'Play one game session', state.play, '', 'GO')}
+           ${renderTask('cast', 'CAST ON WARPCAST', 'Share your journey', state.cast, '', 'CAST')}
+           ${renderTask('tweet', 'TWEET ABOUT US', 'Spread the word on X', state.tweet, '', 'TWEET')}
+           ${renderTask('spend', 'USE $JESSE', 'Spend any amount today', state.spend, '', 'USE')}
+         </div>
+         
+         <div class="pixel-font" style="font-size:8px;color:#aaa;text-align:center;margin-top:16px;">
+           Resets every day at 00:00 UTC
+         </div>
+       </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  // Bind Events
+  setTimeout(() => {
+    const closeBtn = document.getElementById('close-daily');
+    if (closeBtn) closeBtn.onclick = () => container.innerHTML = '';
+
+    if (!state.play) {
+      document.getElementById('task-btn-play').onclick = () => {
+        container.innerHTML = '';
+        startJesseJump();
+      };
+    }
+
+    if (!state.cast) {
+      document.getElementById('task-btn-cast').onclick = () => {
+        const text = "Daily Quest: Verified! ✅\n\nPlaying Jesse Jump and climbing the ranks. 🪐\n\nPlay now! 👇";
+        const url = "https://warpcast.com/~/compose?text=" + encodeURIComponent(text) + "&embeds[]=" + encodeURIComponent("https://jesse-game-world.vercel.app");
+        window.open(url, '_blank');
+        setDailyTaskComplete('cast');
+      };
+    }
+
+    if (!state.tweet) {
+      document.getElementById('task-btn-tweet').onclick = () => {
+        const text = "Daily Quest: Verified! ✅\n\nPlaying Jesse Jump! 🪐\n#JesseGameWorld $JESSE";
+        const url = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent("https://jesse-game-world.vercel.app");
+        window.open(url, '_blank');
+        setDailyTaskComplete('tweet');
+      };
+    }
+
+    if (!state.spend) {
+      document.getElementById('task-btn-spend').onclick = () => {
+        alert("To complete this:\n1. Play the game\n2. Use 'Revive' or spend $JESSE\n3. Come back here and check!");
+        container.innerHTML = '';
+        startJesseJump();
+      };
+    }
+
+  }, 0);
+}

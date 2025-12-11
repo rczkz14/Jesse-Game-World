@@ -992,9 +992,11 @@ export function startGame() {
                     let secondsPerBlock = 0.30; // 0-199m
 
                     if (state.hasRevived) {
-                        secondsPerBlock = 0.225; // Revive speed
+                        secondsPerBlock = 0.21; // Revive speed
+                    } else if (state.score >= 500) {
+                        secondsPerBlock = 0.18; // 500m+
                     } else if (state.score >= 400) {
-                        secondsPerBlock = 0.205; // Base for 400m+
+                        secondsPerBlock = 0.205; // 400m+
                     } else if (state.score >= 300) secondsPerBlock = 0.25;
                     else if (state.score >= 200) secondsPerBlock = 0.275;
 
@@ -1544,20 +1546,21 @@ export function startGame() {
     }
 
     async function updateScore(id, newScore) {
-        console.log('Updating score for ID:', id, 'New Score:', newScore);
-        const { data, error } = await supabase
-            .from('game_scores')
-            .update({ score: newScore })
-            .eq('id', id)
-            .select();
+        console.log('Updating score SECURELY for ID:', id, 'New Score:', newScore);
 
-        if (error || !data || data.length === 0) {
-            console.warn('Supabase Update Failed (RLS or ID missing). Falling back to INSERT.', error);
-            // Fallback: If update fails, just insert a new one so we don't lose data
-            const newId = await saveScore(newScore);
-            if (newId) state.lastScoreId = newId; // Update local ID to the new one
+        // SECURE UPDATE: Use RPC function
+        const { data, error } = await supabase
+            .rpc('update_score', {
+                p_id: id,
+                p_new_score: newScore
+            });
+
+        if (error) {
+            console.error('Secure Update Failed:', error);
+            // If update fails, we might want to try inserting as a fallback?
+            // For now, just log it.
         } else {
-            console.log('Score updated successfully:', data);
+            console.log('Score updated securely via RPC');
         }
     }
 
