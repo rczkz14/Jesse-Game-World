@@ -65,10 +65,32 @@ async function getRecentPlayers() {
   });
 }
 
+// GLOBAL ACHIEVEMENT DATA
+const ACHIEVEMENT_DATA = {
+  'jesse-jump': [
+    { id: 'jump_1', name: 'FIRST HOP', desc: 'Reach 1m', req: 1, icon: '🥉', points: 1 },
+    { id: 'jump_300', name: 'CLOUD JUMP', desc: 'Reach 300m', req: 300, icon: '🥈', points: 5 },
+    { id: 'jump_750', name: 'SKY HIGH', desc: 'Reach 750m', req: 750, icon: '🥇', points: 10 },
+    { id: 'jump_1000', name: 'MOON WALK', desc: 'Reach 1000m', req: 1000, icon: '🚀', points: 25 },
+    { id: 'jump_2000', name: 'GALACTIC', desc: 'Reach 2000m', req: 2000, icon: '🪐', points: 50 },
+    { id: 'jump_3000', name: 'GOD MODE', desc: 'Reach 3000m', req: 3000, icon: '👑', points: 100 }
+  ],
+  'spending': [
+    { id: 'spend_1', name: 'SUPPORTER', desc: 'Spend 1 $JESSE', req: 1, icon: '💸', points: 10 },
+    { id: 'spend_50', name: 'INVESTOR', desc: 'Spend 50 $JESSE', req: 50, icon: '🎩', points: 50 },
+    { id: 'spend_250', name: 'DIAMOND', desc: 'Spend 250 $JESSE', req: 250, icon: '💎', points: 250 },
+    { id: 'spend_1000', name: 'WHALE', desc: 'Spend 1000 $JESSE', req: 1000, icon: '🐳', points: 500 }
+  ]
+};
+
+// Flatten for easy lookup
+const ALL_BADGES = [...ACHIEVEMENT_DATA['jesse-jump'], ...ACHIEVEMENT_DATA['spending']];
+
 // Fetch $JESSE token price from Dexscreener
 async function fetchJessePrice() {
   try {
-    const res = await fetch('https://api.dexscreener.com/latest/dex/tokens/0x50f88fe97f72cd3e75b9eb4f747f59bceba80d59');
+    const jessePriceUrl = 'https://api.dexscreener.com/latest/dex/pairs/base/0x30672ae37812f864d36e2f76789f284489110943';
+    const res = await fetch(jessePriceUrl);
     const data = await res.json();
     return data.pairs && data.pairs[0] ? `$${data.pairs[0].priceUsd}` : 'N/A';
   } catch {
@@ -122,14 +144,12 @@ function renderMainPage(jessePrice) {
           </div>
           <div style="font-size:1.3em;font-weight:bold;margin-bottom:4px;">${profile.nickname}</div>
           <div style="background:#f5f5f5;padding:4px 14px;border-radius:8px;font-size:0.95em;margin-bottom:16px;">FID: ${profile.fid || 'Unknown'}</div>
+          <div style="font-size:0.75em;color:#E94F9B;font-weight:900;margin-bottom:16px;margin-top:-12px;" id="profile-points">... PTS</div>
         </div>
         <div style="background:#f5faff;padding:12px 18px;border-radius:12px;margin:0 24px 18px 24px;font-size:0.98em;color:#2a5bd7;font-weight:bold;">CONNECTED WALLET<br><span id="wallet-address-display" style="color:#888;font-weight:normal;">Not Connected</span></div>
           <div style="padding:0 24px;">
           <div style="font-weight:bold;color:#888;font-size:0.98em;margin-bottom:10px;">GAME STATS</div>
-          <div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px #0001;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;margin-bottom:10px;">
-            <div style="display:flex;align-items:center;"><span style="font-size:20px;margin-right:10px;">✨</span><span style="font-weight:bold;">Total Points</span></div>
-            <div style="font-size:1.1em;color:#E94F9B;font-weight:900;" id="profile-points">...</div>
-          </div>
+
           <div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px #0001;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;margin-bottom:10px;">
             <div style="display:flex;align-items:center;"><img src="./assets/jesse-jump/jessejump.png" style="width:32px;height:32px;margin-right:10px;" /><span style="font-weight:bold;">Jesse Jump</span></div>
             <div style="font-size:1em;color:#222;font-weight:bold;">Best Score <span id="best-score-display" style="font-size:1.1em;">0m</span></div>
@@ -206,10 +226,14 @@ function renderMainPage(jessePrice) {
         const scoreDisplay = document.getElementById('best-score-display');
         const pointsDisplay = document.getElementById('profile-points');
 
-        // Fetch Points
+        // Fetch Points & Sync
         if (pointsDisplay) {
-          pointsDisplay.innerText = 'Loading...';
+          pointsDisplay.innerText = 'Syncing...';
           if (profile.fid) {
+            // 1. Sync Logic (Calculate expected points vs stored)
+            await syncPoints();
+
+            // 2. Fetch Fresh
             const { data } = await supabase.from('player_stats').select('points').eq('player_fid', profile.fid).maybeSingle();
             const pts = data ? (data.points || 0) : 0;
             pointsDisplay.innerText = pts + ' PTS';
@@ -547,6 +571,7 @@ function renderMainPage(jessePrice) {
 
           if (category === 'jesse-jump') {
             title = 'DISTANCE RUN';
+            badges = ACHIEVEMENT_DATA['jesse-jump'];
             // Get Best Score
             if (profile.nickname !== 'Guest') {
               const { data: scoreData } = await supabase
@@ -558,17 +583,10 @@ function renderMainPage(jessePrice) {
                 .limit(1);
               if (scoreData && scoreData.length > 0) currentValue = scoreData[0].score;
             }
-            badges = [
-              { id: 'jump_1', name: 'FIRST HOP', desc: 'Reach 1m', req: 1, icon: '🥉', points: 10 },
-              { id: 'jump_300', name: 'CLOUD JUMP', desc: 'Reach 300m', req: 300, icon: '🥈', points: 50 },
-              { id: 'jump_750', name: 'SKY HIGH', desc: 'Reach 750m', req: 750, icon: '🥇', points: 100 },
-              { id: 'jump_1000', name: 'MOON WALK', desc: 'Reach 1000m', req: 1000, icon: '🚀', points: 250 },
-              { id: 'jump_2000', name: 'GALACTIC', desc: 'Reach 2000m', req: 2000, icon: '🪐', points: 500 },
-              { id: 'jump_3000', name: 'GOD MODE', desc: 'Reach 3000m', req: 3000, icon: '👑', points: 1000 }
-            ];
           }
           else if (category === 'spending') {
             title = '$JESSE SPENT';
+            badges = ACHIEVEMENT_DATA['spending'];
             // Get Spending
             const { data: statData } = await supabase
               .from('player_stats')
@@ -576,13 +594,6 @@ function renderMainPage(jessePrice) {
               .eq('player_fid', profile.fid)
               .maybeSingle();
             if (statData) currentValue = parseFloat(statData.total_jesse_spent) || 0;
-
-            badges = [
-              { id: 'spend_1', name: 'SUPPORTER', desc: 'Spend 1 $JESSE', req: 1, icon: '💸' },
-              { id: 'spend_50', name: 'INVESTOR', desc: 'Spend 50 $JESSE', req: 50, icon: '🎩' },
-              { id: 'spend_250', name: 'DIAMOND', desc: 'Spend 250 $JESSE', req: 250, icon: '💎' },
-              { id: 'spend_1000', name: 'WHALE', desc: 'Spend 1000 $JESSE', req: 1000, icon: '🐳' }
-            ];
           }
 
         } catch (e) {
@@ -645,7 +656,7 @@ function renderMainPage(jessePrice) {
                 btn.style.cursor = 'default';
                 claimedIds.add(badgeId); // Update local state strictly
                 // Award Points
-                const item = badges.find(b => b.id === badgeId);
+                const item = ALL_BADGES.find(b => b.id === badgeId);
                 if (item && item.points) {
                   awardPoints(item.points);
                 }
@@ -840,8 +851,8 @@ function setDailyTaskComplete(task) {
   if (!state[task]) {
     state[task] = true;
     localStorage.setItem(key, JSON.stringify(state));
-    // Award Daily Points (50)
-    if (window.awardPoints) window.awardPoints(50);
+    // Award Daily Points (5)
+    if (window.awardPoints) window.awardPoints(5);
 
     // Refresh modal if open
     if (document.getElementById('daily-modal-bg')) {
@@ -853,19 +864,55 @@ function setDailyTaskComplete(task) {
 // Global Award Points Helper
 window.awardPoints = async (amount) => {
   if (!profile.fid) return;
-  console.log('Awarding points: ', amount);
   try {
     await supabase.rpc('add_points', { p_fid: profile.fid, p_amount: amount });
-    // Optional: Toast notification could go here
   } catch (e) {
     console.error('Point award failed', e);
   }
 };
 
+async function syncPoints() {
+  if (!profile.fid) return;
+  try {
+    // 1. Get Claimed Achievement IDs
+    const { data: claims } = await supabase
+      .from('claimed_achievements')
+      .select('achievement_id')
+      .eq('player_fid', profile.fid);
+
+    if (!claims || claims.length === 0) return;
+
+    // 2. Calculate Expected Points from Badges
+    let expectedPoints = 0;
+    claims.forEach(c => {
+      const badge = ALL_BADGES.find(b => b.id === c.achievement_id);
+      if (badge) expectedPoints += (badge.points || 0);
+    });
+
+    // 3. Get Current Points
+    const { data: stats } = await supabase
+      .from('player_stats')
+      .select('points')
+      .eq('player_fid', profile.fid)
+      .maybeSingle();
+
+    const currentPoints = stats ? (stats.points || 0) : 0;
+
+    // 4. If shortfall, add difference (One-way sync to prevent exploiting daily tasks overlap)
+    if (expectedPoints > currentPoints) {
+      const diff = expectedPoints - currentPoints;
+      console.log(`Syncing points: Found ${currentPoints}, Expected at least ${expectedPoints}. Adding ${diff}.`);
+      await window.awardPoints(diff);
+    }
+  } catch (e) {
+    console.warn('Sync points failed', e);
+  }
+}
+
 // Hook into game start
 const originalStart = startJesseJump;
 startJesseJump = function () {
-  setDailyTaskComplete('play');
+  // Removed setDailyTaskComplete('play') from here to rely on DB verification
   originalStart.apply(this, arguments);
 };
 
@@ -881,25 +928,51 @@ async function openDailyTasks() {
     </div>
   `;
 
-  // Verify Spending Task via Supabase
-  if (!state.spend && profile.fid) {
+  // Verify Tasks via Supabase
+  if ((!state.spend || !state.play) && profile.fid) {
+    const today = new Date().toISOString().slice(0, 10);
     try {
-      const { data, error } = await supabase
-        .from('player_stats')
-        .select('updated_at')
-        .eq('player_fid', profile.fid)
-        .maybeSingle();
+      const promises = [];
 
-      if (data && data.updated_at) {
-        const lastUpdate = new Date(data.updated_at).toISOString().slice(0, 10);
-        const today = new Date().toISOString().slice(0, 10);
-        if (lastUpdate === today) {
-          setDailyTaskComplete('spend');
-          state = getDailyState(); // Refresh state
-        }
+      // Check Spend
+      if (!state.spend) {
+        promises.push(
+          supabase
+            .from('player_stats')
+            .select('updated_at')
+            .eq('player_fid', profile.fid)
+            .maybeSingle()
+            .then(({ data }) => {
+              if (data && data.updated_at) {
+                const lastUpdate = new Date(data.updated_at).toISOString().slice(0, 10);
+                if (lastUpdate === today) setDailyTaskComplete('spend');
+              }
+            })
+        );
       }
+
+      // Check Play
+      if (!state.play) {
+        promises.push(
+          supabase
+            .from('game_scores')
+            .select('created_at')
+            .eq('player_fid', profile.fid)
+            .gte('created_at', today + 'T00:00:00')
+            .limit(1)
+            .then(({ data }) => {
+              if (data && data.length > 0) {
+                setDailyTaskComplete('play');
+              }
+            })
+        );
+      }
+
+      await Promise.all(promises);
+      state = getDailyState(); // Refresh state
+
     } catch (e) {
-      console.warn('Failed to verify daily spend:', e);
+      console.warn('Failed to verify daily tasks:', e);
     }
   }
 
@@ -917,7 +990,7 @@ async function openDailyTasks() {
          <div style="flex:1;">
            <div class="pixel-font" style="font-size:10px;color:#000;margin-bottom:6px;">${name}</div>
            <div class="pixel-font" style="font-size:8px;color:#666;">${desc}</div>
-           <div class="pixel-font" style="font-size:8px;color:#E94F9B;margin-top:2px;">+50 PTS</div>
+           <div class="pixel-font" style="font-size:8px;color:#E94F9B;margin-top:2px;">+5 PTS</div>
          </div>
          <button id="task-btn-${id}" class="pixel-btn" 
            style="font-size:8px;padding:8px;background:${btnColor};border-color:#000;color:${isDone ? '#000' : '#fff'};cursor:${btnCursor};width:60px;"
