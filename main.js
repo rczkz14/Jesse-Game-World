@@ -666,19 +666,17 @@ function renderMainPage(jessePrice) {
               if (item && item.points) {
                 awardPoints(item.points);
               }
+            } else {
+              console.error(error);
+              alert('Claim Error: ' + (error.message || error.code));
+              if (btn) { btn.innerText = 'ERROR'; btn.disabled = false; }
             }
-          } else {
-            console.error(error);
-            alert('Claim Error: ' + (error.message || error.code));
+          } catch (e) {
+            console.error(e);
             if (btn) { btn.innerText = 'ERROR'; btn.disabled = false; }
           }
-        } catch (e) {
-          console.error(e);
-          if (btn) { btn.innerText = 'ERROR'; btn.disabled = false; }
-        }
-      };
-
-      const html = `
+        };
+        const html = `
           <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;">
              <div class="pixel-card" style="width:90%;max-width:380px;height:70vh;border-radius:0;position:relative;display:flex;flex-direction:column;padding:0;">
                 
@@ -695,41 +693,38 @@ function renderMainPage(jessePrice) {
           </div>
         `;
 
-      achievementContainer.innerHTML = html;
+        achievementContainer.innerHTML = html;
 
-      setTimeout(() => {
-        const backBtn = document.getElementById('back-to-hub');
-        if (backBtn) backBtn.onclick = () => renderAchievementHub();
-      }, 0);
-    }
-  }
-  });
-}
+        setTimeout(() => {
+          const backBtn = document.getElementById('back-to-hub');
+          if (backBtn) backBtn.onclick = () => renderAchievementHub();
+        }, 0);
+      }
 
-// Check if we are in a supported environment (Farcaster/BaseApp)
-// We utilize UA check + context race to be robust
-async function checkEnvironment() {
-  // 1. Trust User Agent if it explicitly says Warpcast/Farcaster
-  if (/Warpcast|Farcaster/i.test(navigator.userAgent)) {
-    return true;
-  }
+      // Check if we are in a supported environment (Farcaster/BaseApp)
+      // We utilize UA check + context race to be robust
+      async function checkEnvironment() {
+        // 1. Trust User Agent if it explicitly says Warpcast/Farcaster
+        if (/Warpcast|Farcaster/i.test(navigator.userAgent)) {
+          return true;
+        }
 
-  // 2. Fallback: Check if sdk.context resolves within a timeout
-  // Increased timeout to 3500ms to verify slower connections/clients
-  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 3500));
-  try {
-    const context = await Promise.race([sdk.context, timeout]);
-    return !!context;
-  } catch (e) {
-    return false;
-  }
-}
+        // 2. Fallback: Check if sdk.context resolves within a timeout
+        // Increased timeout to 3500ms to verify slower connections/clients
+        const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 3500));
+        try {
+          const context = await Promise.race([sdk.context, timeout]);
+          return !!context;
+        } catch (e) {
+          return false;
+        }
+      }
 
-function renderGateScreen() {
-  const deepLink = 'https://warpcast.com/~/frames/launch?url=https%3A%2F%2Fjesse-game-world.vercel.app';
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(deepLink)}`;
+      function renderGateScreen() {
+        const deepLink = 'https://warpcast.com/~/frames/launch?url=https%3A%2F%2Fjesse-game-world.vercel.app';
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(deepLink)}`;
 
-  app.innerHTML = `
+        app.innerHTML = `
     <style>
       body, html { margin:0; padding:0; height:100%; background: #f0f2f5; color: #333; font-family: 'Inter', sans-serif; }
       .gate-container { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding:20px; text-align:center; background: radial-gradient(circle at center, #ffffff 0%, #f0f2f5 100%); }
@@ -754,243 +749,243 @@ function renderGateScreen() {
       <div class="note">Scan Code or Click Button</div>
     </div>
   `;
-  document.body.style.background = '#f0f2f5';
-}
+        document.body.style.background = '#f0f2f5';
+      }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  window.sdk = sdk;
+      document.addEventListener('DOMContentLoaded', async () => {
+        window.sdk = sdk;
 
-  // 1. Immediate Environment Check
-  const isFarcasterEnv = await checkEnvironment();
+        // 1. Immediate Environment Check
+        const isFarcasterEnv = await checkEnvironment();
 
-  if (isFarcasterEnv) {
-    // 2. Render IMMEDIATELY with defaults to clear the splash screen (black screen)
-    // We don't wait for profile/price data here.
-    renderMainPage('Loading...');
+        if (isFarcasterEnv) {
+          // 2. Render IMMEDIATELY with defaults to clear the splash screen (black screen)
+          // We don't wait for profile/price data here.
+          renderMainPage('Loading...');
 
-    // 3. Clear Splash Screen
-    try {
-      sdk.actions.ready();
-    } catch (e) {
-      console.error('Failed to call sdk.actions.ready:', e);
-    }
+          // 3. Clear Splash Screen
+          try {
+            sdk.actions.ready();
+          } catch (e) {
+            console.error('Failed to call sdk.actions.ready:', e);
+          }
 
-    // 4. Background Data Fetching
-    // We can update the UI once data arrives
-    (async () => {
-      try {
-        const [pricePromise, profilePromise] = [
-          fetchJessePrice(),
-          fetchFarcasterProfile()
-        ];
+          // 4. Background Data Fetching
+          // We can update the UI once data arrives
+          (async () => {
+            try {
+              const [pricePromise, profilePromise] = [
+                fetchJessePrice(),
+                fetchFarcasterProfile()
+              ];
 
-        // Wait for both, but dont block the UI thread which is already rendered
-        const price = await pricePromise;
-        await profilePromise; // This updates the global 'profile' object
+              // Wait for both, but dont block the UI thread which is already rendered
+              const price = await pricePromise;
+              await profilePromise; // This updates the global 'profile' object
 
-        // Re-render with real data
-        console.log('Data loaded, re-rendering...');
-        renderMainPage(price || 'N/A');
+              // Re-render with real data
+              console.log('Data loaded, re-rendering...');
+              renderMainPage(price || 'N/A');
 
-        // Re-attach listeners is handled by renderMainPage re-running
+              // Re-attach listeners is handled by renderMainPage re-running
 
-        // Load Ticker logic
-        const originalPlayers = await getRecentPlayers();
-        const ticker = document.getElementById('ticker-content');
-        if (ticker && originalPlayers.length > 0) {
-          let players = [...originalPlayers];
-          while (players.length < 6) players = players.concat(originalPlayers);
-          players = players.slice(0, 6);
+              // Load Ticker logic
+              const originalPlayers = await getRecentPlayers();
+              const ticker = document.getElementById('ticker-content');
+              if (ticker && originalPlayers.length > 0) {
+                let players = [...originalPlayers];
+                while (players.length < 6) players = players.concat(originalPlayers);
+                players = players.slice(0, 6);
 
-          const singleSet = players.map(p =>
-            `<div style="display:inline-flex;align-items:center;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);padding:6px 16px;border-radius:30px;margin-right:24px;box-shadow:0 2px 8px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.8);">
+                const singleSet = players.map(p =>
+                  `<div style="display:inline-flex;align-items:center;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);padding:6px 16px;border-radius:30px;margin-right:24px;box-shadow:0 2px 8px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.8);">
               <img src="${p.icon}" style="width:28px;height:28px;margin-right:10px;border-radius:6px;object-fit:cover;" />
               <img src="${p.profile.picture}" style="width:28px;height:28px;border-radius:50%;margin-right:10px;border:1px solid rgba(0,0,0,0.1);object-fit:cover;" />
               <span style="font-weight:bold;color:#333;margin-right:8px;font-size:0.95em;">${p.profile.nickname}</span>
               <span style="font-weight:900;color:#E94F9B;font-size:1em;">${p.score}m</span>
             </div>`
-          ).join('');
-          ticker.innerHTML = singleSet.repeat(4);
+                ).join('');
+                ticker.innerHTML = singleSet.repeat(4);
+              }
+
+              // Initialize Daily Tasks
+              initDailyTasks();
+
+            } catch (err) {
+              console.warn('Background data fetch error:', err);
+            }
+          })();
+
+        } else {
+          // Browser environment
+          renderGateScreen();
         }
+      });
 
-        // Initialize Daily Tasks
-        initDailyTasks();
-
-      } catch (err) {
-        console.warn('Background data fetch error:', err);
+      // --- DAILY TASKS SYSTEM ---
+      function initDailyTasks() {
+        const btnContainer = document.querySelector('.main-header > div');
+        if (btnContainer) {
+          const dailyBtn = document.createElement('div');
+          dailyBtn.id = 'daily-btn';
+          dailyBtn.style.cssText = 'width:40px; height:40px; background:rgba(255,255,255,0.9); border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; font-size:1.4em; cursor:pointer; margin-left:2px; margin-top:12px;';
+          dailyBtn.innerHTML = '📅';
+          dailyBtn.onclick = openDailyTasks;
+          btnContainer.appendChild(dailyBtn);
+        }
       }
-    })();
 
-  } else {
-    // Browser environment
-    renderGateScreen();
-  }
-});
+      function getDailyState() {
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const key = `jgw_daily_${today}`;
+        try {
+          return JSON.parse(localStorage.getItem(key)) || { play: false, cast: false, tweet: false, spend: false };
+        } catch {
+          return { play: false, cast: false, tweet: false, spend: false };
+        }
+      }
 
-// --- DAILY TASKS SYSTEM ---
-function initDailyTasks() {
-  const btnContainer = document.querySelector('.main-header > div');
-  if (btnContainer) {
-    const dailyBtn = document.createElement('div');
-    dailyBtn.id = 'daily-btn';
-    dailyBtn.style.cssText = 'width:40px; height:40px; background:rgba(255,255,255,0.9); border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; font-size:1.4em; cursor:pointer; margin-left:2px; margin-top:12px;';
-    dailyBtn.innerHTML = '📅';
-    dailyBtn.onclick = openDailyTasks;
-    btnContainer.appendChild(dailyBtn);
-  }
-}
+      function setDailyTaskComplete(task) {
+        const today = new Date().toISOString().slice(0, 10);
+        const key = `jgw_daily_${today}`;
+        const state = getDailyState();
+        if (!state[task]) {
+          state[task] = true;
+          localStorage.setItem(key, JSON.stringify(state));
+          // Award Daily Points (5)
+          if (window.awardPoints) window.awardPoints(5);
 
-function getDailyState() {
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const key = `jgw_daily_${today}`;
-  try {
-    return JSON.parse(localStorage.getItem(key)) || { play: false, cast: false, tweet: false, spend: false };
-  } catch {
-    return { play: false, cast: false, tweet: false, spend: false };
-  }
-}
+          // Refresh modal if open
+          if (document.getElementById('daily-modal-bg')) {
+            openDailyTasks();
+          }
+        }
+      }
 
-function setDailyTaskComplete(task) {
-  const today = new Date().toISOString().slice(0, 10);
-  const key = `jgw_daily_${today}`;
-  const state = getDailyState();
-  if (!state[task]) {
-    state[task] = true;
-    localStorage.setItem(key, JSON.stringify(state));
-    // Award Daily Points (5)
-    if (window.awardPoints) window.awardPoints(5);
+      // Global Award Points Helper
+      window.awardPoints = async (amount) => {
+        if (!profile.fid) return;
+        try {
+          await supabase.rpc('add_points', { p_fid: profile.fid, p_amount: amount });
+        } catch (e) {
+          console.error('Point award failed', e);
+        }
+      };
 
-    // Refresh modal if open
-    if (document.getElementById('daily-modal-bg')) {
-      openDailyTasks();
-    }
-  }
-}
+      async function syncPoints() {
+        if (!profile.fid) return;
+        try {
+          // 1. Get Claimed Achievement IDs
+          const { data: claims } = await supabase
+            .from('claimed_achievements')
+            .select('achievement_id')
+            .eq('player_fid', profile.fid);
 
-// Global Award Points Helper
-window.awardPoints = async (amount) => {
-  if (!profile.fid) return;
-  try {
-    await supabase.rpc('add_points', { p_fid: profile.fid, p_amount: amount });
-  } catch (e) {
-    console.error('Point award failed', e);
-  }
-};
+          if (!claims || claims.length === 0) return;
 
-async function syncPoints() {
-  if (!profile.fid) return;
-  try {
-    // 1. Get Claimed Achievement IDs
-    const { data: claims } = await supabase
-      .from('claimed_achievements')
-      .select('achievement_id')
-      .eq('player_fid', profile.fid);
+          // 2. Calculate Expected Points from Badges
+          let expectedPoints = 0;
+          claims.forEach(c => {
+            const badge = ALL_BADGES.find(b => b.id === c.achievement_id);
+            if (badge) expectedPoints += (badge.points || 0);
+          });
 
-    if (!claims || claims.length === 0) return;
+          // 3. Get Current Points
+          const { data: stats } = await supabase
+            .from('player_stats')
+            .select('points')
+            .eq('player_fid', profile.fid)
+            .maybeSingle();
 
-    // 2. Calculate Expected Points from Badges
-    let expectedPoints = 0;
-    claims.forEach(c => {
-      const badge = ALL_BADGES.find(b => b.id === c.achievement_id);
-      if (badge) expectedPoints += (badge.points || 0);
-    });
+          const currentPoints = stats ? (stats.points || 0) : 0;
 
-    // 3. Get Current Points
-    const { data: stats } = await supabase
-      .from('player_stats')
-      .select('points')
-      .eq('player_fid', profile.fid)
-      .maybeSingle();
+          // 4. If shortfall, add difference (One-way sync to prevent exploiting daily tasks overlap)
+          if (expectedPoints > currentPoints) {
+            const diff = expectedPoints - currentPoints;
+            console.log(`Syncing points: Found ${currentPoints}, Expected at least ${expectedPoints}. Adding ${diff}.`);
+            await window.awardPoints(diff);
+          }
+        } catch (e) {
+          console.warn('Sync points failed', e);
+        }
+      }
 
-    const currentPoints = stats ? (stats.points || 0) : 0;
+      // Hook into game start
+      const originalStart = startJesseJump;
+      startJesseJump = function () {
+        // Removed setDailyTaskComplete('play') from here to rely on DB verification
+        originalStart.apply(this, arguments);
+      };
 
-    // 4. If shortfall, add difference (One-way sync to prevent exploiting daily tasks overlap)
-    if (expectedPoints > currentPoints) {
-      const diff = expectedPoints - currentPoints;
-      console.log(`Syncing points: Found ${currentPoints}, Expected at least ${expectedPoints}. Adding ${diff}.`);
-      await window.awardPoints(diff);
-    }
-  } catch (e) {
-    console.warn('Sync points failed', e);
-  }
-}
+      async function openDailyTasks() {
+        let state = getDailyState(); // { play, cast, tweet, spend }
+        const container = document.getElementById('achievement-modal-container'); // Reuse container
+        if (!container) return;
 
-// Hook into game start
-const originalStart = startJesseJump;
-startJesseJump = function () {
-  // Removed setDailyTaskComplete('play') from here to rely on DB verification
-  originalStart.apply(this, arguments);
-};
-
-async function openDailyTasks() {
-  let state = getDailyState(); // { play, cast, tweet, spend }
-  const container = document.getElementById('achievement-modal-container'); // Reuse container
-  if (!container) return;
-
-  // Show Loading
-  container.innerHTML = `
+        // Show Loading
+        container.innerHTML = `
     <div id="daily-loading" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;">
        <div style="font-family:'Press Start 2P', cursive;color:#fff;font-size:12px;">CHECKING LOGS...</div>
     </div>
   `;
 
-  // Verify Tasks via Supabase
-  if ((!state.spend || !state.play) && profile.fid) {
-    const today = new Date().toISOString().slice(0, 10);
-    try {
-      const promises = [];
+        // Verify Tasks via Supabase
+        if ((!state.spend || !state.play) && profile.fid) {
+          const today = new Date().toISOString().slice(0, 10);
+          try {
+            const promises = [];
 
-      // Check Spend
-      if (!state.spend) {
-        promises.push(
-          supabase
-            .from('player_stats')
-            .select('updated_at')
-            .eq('player_fid', profile.fid)
-            .maybeSingle()
-            .then(({ data }) => {
-              if (data && data.updated_at) {
-                const lastUpdate = new Date(data.updated_at).toISOString().slice(0, 10);
-                if (lastUpdate === today) setDailyTaskComplete('spend');
-              }
-            })
-        );
-      }
+            // Check Spend
+            if (!state.spend) {
+              promises.push(
+                supabase
+                  .from('player_stats')
+                  .select('updated_at')
+                  .eq('player_fid', profile.fid)
+                  .maybeSingle()
+                  .then(({ data }) => {
+                    if (data && data.updated_at) {
+                      const lastUpdate = new Date(data.updated_at).toISOString().slice(0, 10);
+                      if (lastUpdate === today) setDailyTaskComplete('spend');
+                    }
+                  })
+              );
+            }
 
-      // Check Play
-      if (!state.play) {
-        promises.push(
-          supabase
-            .from('game_scores')
-            .select('created_at')
-            .eq('player_fid', profile.fid)
-            .gte('created_at', today + 'T00:00:00')
-            .limit(1)
-            .then(({ data }) => {
-              if (data && data.length > 0) {
-                setDailyTaskComplete('play');
-              }
-            })
-        );
-      }
+            // Check Play
+            if (!state.play) {
+              promises.push(
+                supabase
+                  .from('game_scores')
+                  .select('created_at')
+                  .eq('player_fid', profile.fid)
+                  .gte('created_at', today + 'T00:00:00')
+                  .limit(1)
+                  .then(({ data }) => {
+                    if (data && data.length > 0) {
+                      setDailyTaskComplete('play');
+                    }
+                  })
+              );
+            }
 
-      await Promise.all(promises);
-      state = getDailyState(); // Refresh state
+            await Promise.all(promises);
+            state = getDailyState(); // Refresh state
 
-    } catch (e) {
-      console.warn('Failed to verify daily tasks:', e);
-    }
-  }
+          } catch (e) {
+            console.warn('Failed to verify daily tasks:', e);
+          }
+        }
 
-  const renderTask = (id, name, desc, isDone, actionFn, actionLabel) => {
-    const btnColor = isDone ? '#55dbcb' : '#E94F9B';
-    const btnText = isDone ? 'DONE' : actionLabel;
-    const btnCursor = isDone ? 'default' : 'pointer';
+        const renderTask = (id, name, desc, isDone, actionFn, actionLabel) => {
+          const btnColor = isDone ? '#55dbcb' : '#E94F9B';
+          const btnText = isDone ? 'DONE' : actionLabel;
+          const btnCursor = isDone ? 'default' : 'pointer';
 
-    // Pixel verification checkmark
-    const check = isDone ? '✅' : '⏳';
+          // Pixel verification checkmark
+          const check = isDone ? '✅' : '⏳';
 
-    return `
+          return `
       <div class="pixel-list-item" style="padding:12px;display:flex;align-items:center;margin-bottom:12px;background:#fff;border:4px solid #eee;box-shadow:4px 4px 0 #ddd;">
          <div style="font-size:20px;margin-right:12px;">${check}</div>
          <div style="flex:1;">
@@ -1005,9 +1000,9 @@ async function openDailyTasks() {
          </button>
       </div>
     `;
-  };
+        };
 
-  const html = `
+        const html = `
     <div id="daily-modal-bg" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;">
        <div class="pixel-card" style="width:90%;max-width:380px;border-radius:0;padding:20px;position:relative;background:#fff;border:4px solid #000;box-shadow:8px 8px 0 rgba(0,0,0,0.5);">
          <button id="close-daily" class="pixel-btn" style="position:absolute;top:-20px;right:-20px;width:40px;height:40px;font-size:16px;">X</button>
@@ -1030,59 +1025,60 @@ async function openDailyTasks() {
     </div>
   `;
 
-  container.innerHTML = html;
+        container.innerHTML = html;
 
-  // Bind Events
-  setTimeout(() => {
-    const closeBtn = document.getElementById('close-daily');
-    if (closeBtn) closeBtn.onclick = () => container.innerHTML = '';
+        // Bind Events
+        setTimeout(() => {
+          const closeBtn = document.getElementById('close-daily');
+          if (closeBtn) closeBtn.onclick = () => container.innerHTML = '';
 
-    if (!state.play) {
-      document.getElementById('task-btn-play').onclick = () => {
-        container.innerHTML = '';
-        startJesseJump();
-      };
-    }
+          if (!state.play) {
+            document.getElementById('task-btn-play').onclick = () => {
+              container.innerHTML = '';
+              startJesseJump();
+            };
+          }
 
-    if (!state.cast) {
-      document.getElementById('task-btn-cast').onclick = () => {
-        const text = "Daily Quest: Verified! ✅\n\nPlaying Jesse Jump and climbing the ranks. 🪐\n\nPlay now! 👇";
-        const castUrl = "https://warpcast.com/~/compose?text=" + encodeURIComponent(text) + "&embeds[]=" + encodeURIComponent("https://jesse-game-world.vercel.app");
+          if (!state.cast) {
+            document.getElementById('task-btn-cast').onclick = () => {
+              const text = "Daily Quest: Verified! ✅\n\nPlaying Jesse Jump and climbing the ranks. 🪐\n\nPlay now! 👇";
+              const castUrl = "https://warpcast.com/~/compose?text=" + encodeURIComponent(text) + "&embeds[]=" + encodeURIComponent("https://jesse-game-world.vercel.app");
 
-        if (window.sdk && window.sdk.actions) {
-          window.sdk.actions.openUrl(castUrl);
-        } else {
-          window.open(castUrl, '_blank');
-        }
-        setDailyTaskComplete('cast');
-      };
-    }
+              if (window.sdk && window.sdk.actions) {
+                window.sdk.actions.openUrl(castUrl);
+              } else {
+                window.open(castUrl, '_blank');
+              }
+              setDailyTaskComplete('cast');
+            };
+          }
 
-    if (!state.tweet) {
-      document.getElementById('task-btn-tweet').onclick = () => {
-        const text = "Daily Quest: Verified! ✅\n\nPlaying Jesse Jump! 🪐\n#JesseGameWorld $JESSE";
-        const tweetUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent("https://jesse-game-world.vercel.app");
-        const nativeUrl = `twitter://post?message=${encodeURIComponent(text + ' https://jesse-game-world.vercel.app')}`;
-        const isWarpcast = /Warpcast/i.test(navigator.userAgent);
+          if (!state.tweet) {
+            document.getElementById('task-btn-tweet').onclick = () => {
+              const text = "Daily Quest: Verified! ✅\n\nPlaying Jesse Jump! 🪐\n#JesseGameWorld $JESSE";
+              const tweetUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent("https://jesse-game-world.vercel.app");
+              const nativeUrl = `twitter://post?message=${encodeURIComponent(text + ' https://jesse-game-world.vercel.app')}`;
+              const isWarpcast = /Warpcast/i.test(navigator.userAgent);
 
-        if (isWarpcast && window.sdk && window.sdk.actions) {
-          window.sdk.actions.openUrl(tweetUrl);
-        } else {
-          // Base App / Native Fallback
-          window.location.href = nativeUrl;
-          setTimeout(() => { window.open(tweetUrl, '_blank'); }, 1500);
-        }
-        setDailyTaskComplete('tweet');
-      };
-    }
+              if (isWarpcast && window.sdk && window.sdk.actions) {
+                window.sdk.actions.openUrl(tweetUrl);
+              } else {
+                // Base App / Native Fallback
+                window.location.href = nativeUrl;
+                setTimeout(() => { window.open(tweetUrl, '_blank'); }, 1500);
+              }
+              setDailyTaskComplete('tweet');
+            };
+          }
 
-    if (!state.spend) {
-      document.getElementById('task-btn-spend').onclick = () => {
-        alert("To complete this:\n1. Play the game\n2. Use 'Revive' or spend $JESSE\n3. Come back here and check!");
-        container.innerHTML = '';
-        startJesseJump();
-      };
-    }
+          if (!state.spend) {
+            document.getElementById('task-btn-spend').onclick = () => {
+              alert("To complete this:\n1. Play the game\n2. Use 'Revive' or spend $JESSE\n3. Come back here and check!");
+              container.innerHTML = '';
+              startJesseJump();
+            };
+          }
 
-  }, 0);
-}
+        }, 0);
+      }
+
