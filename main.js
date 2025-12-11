@@ -87,13 +87,18 @@ const ACHIEVEMENT_DATA = {
 const ALL_BADGES = [...ACHIEVEMENT_DATA['jesse-jump'], ...ACHIEVEMENT_DATA['spending']];
 
 // Fetch $JESSE token price from Dexscreener
+// Fetch $JESSE token price from Dexscreener
 async function fetchJessePrice() {
   try {
-    const jessePriceUrl = 'https://api.dexscreener.com/latest/dex/pairs/base/0x30672ae37812f864d36e2f76789f284489110943';
+    // USe Token Address to find best pair automatically
+    const jesseTokenAddr = '0x50f88fe97f72cd3e75b9eb4f747f59bceba80d59';
+    const jessePriceUrl = `https://api.dexscreener.com/latest/dex/tokens/${jesseTokenAddr}`;
     const res = await fetch(jessePriceUrl);
     const data = await res.json();
+    // DexScreener returns pairs sorted by liquidity usually. We take the first one.
     return data.pairs && data.pairs[0] ? `$${data.pairs[0].priceUsd}` : 'N/A';
-  } catch {
+  } catch (e) {
+    console.warn('Price fetch failed:', e);
     return 'N/A';
   }
 }
@@ -643,36 +648,37 @@ function renderMainPage(jessePrice) {
             btn.disabled = true;
           }
           try {
-            const { error } = await supabase.from('claimed_achievements').insert({
-              player_fid: profile.fid,
-              achievement_id: badgeId
+            // Secure Claim
+            const { error } = await supabase.rpc('claim_badge', {
+              p_fid: profile.fid,
+              p_badge_id: badgeId
             });
-            // Treat Duplicate Key (23505) as Success
-            if (!error || error.code === '23505') {
-              if (btn) {
-                btn.innerText = 'CLAIMED';
-                btn.style.background = '#55dbcb';
-                btn.style.color = '#000';
-                btn.style.cursor = 'default';
-                claimedIds.add(badgeId); // Update local state strictly
-                // Award Points
-                const item = ALL_BADGES.find(b => b.id === badgeId);
-                if (item && item.points) {
-                  awardPoints(item.points);
-                }
+
+            if (!error) {
+              // Success
+              btn.innerHTML = 'CLAIMED';
+              btn.style.background = '#8BC34A';
+              btn.style.color = '#000';
+              btn.style.cursor = 'default';
+              claimedIds.add(badgeId); // Update local state strictly
+              // Award Points
+              const item = ALL_BADGES.find(b => b.id === badgeId);
+              if (item && item.points) {
+                awardPoints(item.points);
               }
-            } else {
-              console.error(error);
-              alert('Claim Error: ' + (error.message || error.code));
-              if (btn) { btn.innerText = 'ERROR'; btn.disabled = false; }
             }
-          } catch (e) {
-            console.error(e);
+          } else {
+            console.error(error);
+            alert('Claim Error: ' + (error.message || error.code));
             if (btn) { btn.innerText = 'ERROR'; btn.disabled = false; }
           }
-        };
+        } catch (e) {
+          console.error(e);
+          if (btn) { btn.innerText = 'ERROR'; btn.disabled = false; }
+        }
+      };
 
-        const html = `
+      const html = `
           <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:200;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;">
              <div class="pixel-card" style="width:90%;max-width:380px;height:70vh;border-radius:0;position:relative;display:flex;flex-direction:column;padding:0;">
                 
@@ -689,14 +695,14 @@ function renderMainPage(jessePrice) {
           </div>
         `;
 
-        achievementContainer.innerHTML = html;
+      achievementContainer.innerHTML = html;
 
-        setTimeout(() => {
-          const backBtn = document.getElementById('back-to-hub');
-          if (backBtn) backBtn.onclick = () => renderAchievementHub();
-        }, 0);
-      }
+      setTimeout(() => {
+        const backBtn = document.getElementById('back-to-hub');
+        if (backBtn) backBtn.onclick = () => renderAchievementHub();
+      }, 0);
     }
+  }
   });
 }
 
@@ -1041,8 +1047,13 @@ async function openDailyTasks() {
     if (!state.cast) {
       document.getElementById('task-btn-cast').onclick = () => {
         const text = "Daily Quest: Verified! ✅\n\nPlaying Jesse Jump and climbing the ranks. 🪐\n\nPlay now! 👇";
-        const url = "https://warpcast.com/~/compose?text=" + encodeURIComponent(text) + "&embeds[]=" + encodeURIComponent("https://jesse-game-world.vercel.app");
-        window.open(url, '_blank');
+        const castUrl = "https://warpcast.com/~/compose?text=" + encodeURIComponent(text) + "&embeds[]=" + encodeURIComponent("https://jesse-game-world.vercel.app");
+
+        if (window.sdk && window.sdk.actions) {
+          window.sdk.actions.openUrl(castUrl);
+        } else {
+          window.open(castUrl, '_blank');
+        }
         setDailyTaskComplete('cast');
       };
     }
@@ -1050,8 +1061,17 @@ async function openDailyTasks() {
     if (!state.tweet) {
       document.getElementById('task-btn-tweet').onclick = () => {
         const text = "Daily Quest: Verified! ✅\n\nPlaying Jesse Jump! 🪐\n#JesseGameWorld $JESSE";
-        const url = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent("https://jesse-game-world.vercel.app");
-        window.open(url, '_blank');
+        const tweetUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent("https://jesse-game-world.vercel.app");
+        const nativeUrl = `twitter://post?message=${encodeURIComponent(text + ' https://jesse-game-world.vercel.app')}`;
+        const isWarpcast = /Warpcast/i.test(navigator.userAgent);
+
+        if (isWarpcast && window.sdk && window.sdk.actions) {
+          window.sdk.actions.openUrl(tweetUrl);
+        } else {
+          // Base App / Native Fallback
+          window.location.href = nativeUrl;
+          setTimeout(() => { window.open(tweetUrl, '_blank'); }, 1500);
+        }
         setDailyTaskComplete('tweet');
       };
     }

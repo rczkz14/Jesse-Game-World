@@ -1851,61 +1851,21 @@ export function startGame() {
                     fid = context.user.fid;
                 }
             }
-            // Fallback: Check if there's a global profile object from main.js (if accessible globally, though 'let' prevents window.profile)
-            // But we can check window.profile if we exposed it, or just rely on SDK.
-
             if (!fid) {
                 console.warn('No FID, cannot record spending');
-                // alert('Debug: No FID found. Cannot record spending.'); 
                 return;
             }
 
-            const fidStr = String(fid); // Ensure it matches 'text' column type if needed
-            // alert(`Debug: Recording ${amount} for FID ${fidStr}`);
+            const fidStr = String(fid);
 
-            // 1. Check existing
-            const { data: existing, error: fetchError } = await supabase
-                .from('player_stats')
-                .select('id, total_jesse_spent')
-                .eq('player_fid', fidStr)
-                .maybeSingle();
+            // Use Secure RPC
+            const { error } = await supabase.rpc('record_spending', {
+                p_fid: fidStr,
+                p_amount: amount
+            });
 
-            if (fetchError) {
-                console.error('Error fetching player stats:', fetchError);
-                alert('Debug: Fetch Error - ' + fetchError.message);
-                return;
-            }
-
-            if (existing) {
-                // 2. Update
-                const newTotal = (parseFloat(existing.total_jesse_spent) || 0) + parseFloat(amount);
-                const { error: updateError } = await supabase
-                    .from('player_stats')
-                    .update({
-                        total_jesse_spent: newTotal,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', existing.id);
-
-                if (updateError) {
-                    console.error('Error updating stats:', updateError);
-                    alert('Debug: Update Error - ' + updateError.message);
-                }
-
-            } else {
-                // 3. Insert new
-                const { error: insertError } = await supabase
-                    .from('player_stats')
-                    .insert({
-                        player_fid: fidStr,
-                        total_jesse_spent: amount,
-                        updated_at: new Date().toISOString()
-                    });
-
-                if (insertError) {
-                    console.error('Error inserting stats:', insertError);
-                    alert('Debug: Insert Error - ' + insertError.message);
-                }
+            if (error) {
+                console.error('recordSpending RPC Error:', error);
             }
 
         } catch (err) {
